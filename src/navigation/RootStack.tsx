@@ -24,15 +24,10 @@ const RootStack = () => {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {user?(
-
-                    
-                        user.onboardingCompleted ?
+                        !user.onboardingCompleted ?
                             (<Stack.Screen name="Main" component={MainTabs} />) :
                             (<Stack.Screen name='OnBoarding' component={OnBoarding} />)
-                    
-
-
-
+                
                 ) : (
 
                 <Stack.Screen name="Auth" component={AuthStack} />
