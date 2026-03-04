@@ -5,13 +5,14 @@ import AuthStack from './AuthStack'
 import { useAuth } from '../context/AuthProvider'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import MainTabs from './MainTabs'
+import OnBoarding from './OnBoarding'
 
 const RootStack = () => {
 
-const Stack = createNativeStackNavigator();
-const {user, isLoading} = useAuth();
+    const Stack = createNativeStackNavigator();
+    const { user, isLoading } = useAuth();
 
-if (isLoading) {
+    if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#151515' }}>
                 <ActivityIndicator color="#d6fa6f" size="large" />
@@ -19,17 +20,22 @@ if (isLoading) {
         );
     }
 
-
-
-
     return (
-       <NavigationContainer>
+        <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {user ? (
-                    <Stack.Screen name="Main" component={MainTabs} />
+                {user?(
+
+                    
+                        user.onboardingCompleted ?
+                            (<Stack.Screen name="Main" component={MainTabs} />) :
+                            (<Stack.Screen name='OnBoarding' component={OnBoarding} />)
+                    
+
+
+
                 ) : (
 
-                    <Stack.Screen name="Auth" component={AuthStack} />
+                <Stack.Screen name="Auth" component={AuthStack} />
                 )}
             </Stack.Navigator>
         </NavigationContainer>
