@@ -19,6 +19,7 @@ export const getTokens = async () => {
         const credentials = await SecureStore.getItemAsync(TOKEN_KEY);
         if (credentials) {
             return JSON.parse(credentials)
+            console.log(credentials);
         }
         return null;
     } catch (error) {

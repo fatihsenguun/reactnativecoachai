@@ -1,4 +1,7 @@
+import axios from 'axios';
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthProvider'
+
 import {
     StyleSheet,
     Text,
@@ -13,8 +16,31 @@ import {
 
 
 const Login = ({ navigation }: any) => {
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSignin = async () => {
+        try {
+            const url = "http://localhost:8080/authenticate"
+
+            setLoading(true);
+            const response = await axios.post(url, {
+                email: email,
+                password: password
+            });
+            if (response.data.data) {
+
+                console.log(response.data.data);
+                await login(response.data.data)
+                //  navigation.navigate('MainTabs');
+            }
+
+        } catch (error) {
+
+        }
+    }
 
 
 
@@ -52,7 +78,7 @@ const Login = ({ navigation }: any) => {
                     />
                 </View>
 
-                <TouchableOpacity style={styles.button} >
+                <TouchableOpacity onPress={handleSignin} style={styles.button} >
                     <Text style={styles.buttonText}>LOGIN</Text>
                 </TouchableOpacity>
 

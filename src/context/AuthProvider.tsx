@@ -1,48 +1,67 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React, { createContext, useState } from 'react'
-import { getTokens } from './tokenStorage';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { setTokens, getTokens, clearTokens } from './tokenStorage';
 
 interface User {
     accessToken: string;
     refreshToken: string;
 }
 
-export const AuthContext=createContext(null);
-const [user, setUser] = useState<User | null>(null);
-    const [userInfo, setUserInfo] = useState(null);
-    const [isLoading, setIsLoading] = useState(true)
+interface AuthContextType {
+    user: User | null;
+    isLoading: boolean;
+    login: (userData: User) => Promise<void>;
+    logout: () => void;
+}
+
+export const AuthContext = createContext<AuthContextType | null>(null);
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const isLoggedIn = async () => {
         try {
             setIsLoading(true);
             const tokens = await getTokens();
-
-
             if (tokens && tokens.accessToken) {
-
                 setUser({
-                    accessToken: tokens.accessToken ,
+                    accessToken: tokens.accessToken,
                     refreshToken: tokens.refreshToken
                 });
-              //  await fetchUser();
             }
         } catch (error) {
             console.log("Token error: ", error);
         } finally {
-
             setIsLoading(false);
         }
-    }
+    };
+
+    const login = async (userData: User) => {
+        setUser(userData);
+        console.log(userData);
+        await setTokens(userData.accessToken, userData.refreshToken);
+    };
+
+    const logout = () => {
+        setUser(null);
+        clearTokens();
+    };
 
 
-const AuthProvider = () => {
-  return (
-    <View>
-      <Text>AuthProvider</Text>
-    </View>
-  )
-}
+    useEffect(() => {
+        isLoggedIn();
+    }, []);
 
-export default AuthProvider
+    return (
+        <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
-const styles = StyleSheet.create({})
+export default AuthProvider;
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error("useAuth must be used within an AuthProvider");
+    return context;
+};
