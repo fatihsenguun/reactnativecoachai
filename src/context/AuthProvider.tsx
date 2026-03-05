@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { setTokens, getTokens, clearTokens } from './tokenStorage';
+import axios from 'axios';
+import api from '../config/apiClient';
 
 interface Tokens {
     accessToken: string;
@@ -14,6 +16,15 @@ interface User {
     role: string,
     onboardingCompleted: boolean
 }
+interface FitnessProfile {
+    weightKg: number;
+    heightCm: number;
+    age: number,
+    sportsHistory: string,
+    currentGoal: string,
+
+}
+
 
 interface AuthContextType {
     user: User | null;
@@ -29,6 +40,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [curTokens, setCurTokens] = useState<Tokens | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
 
     const isLoggedIn = async () => {
         try {
@@ -49,8 +61,13 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (userData: User) => {
         await setTokens(userData.accessToken, userData.refreshToken);
-        setUser(userData);
-
+        try {
+            const response = await api.get("/user", {})
+            const userProfile = response.data.data ? response.data.data : response.data;
+            setUser(userProfile);
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const logout = () => {

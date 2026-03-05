@@ -11,9 +11,11 @@ import {
     Image,
     FlatList,
     Modal,
-  
+
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../config/apiClient';
+import { useNavigation } from '@react-navigation/native';
 
 
 const GOAL_OPTIONS = [
@@ -34,7 +36,8 @@ const FitnessProfile = ({ navigation }: any) => {
 
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
-    const handleSaveProfile = () => {
+
+    const handleSaveProfile = async () => {
         const payload = {
             weightKg: parseFloat(weightKg),
             heightCm: parseFloat(heightCm),
@@ -42,18 +45,31 @@ const FitnessProfile = ({ navigation }: any) => {
             sportsHistory: sportsHistory,
             currentGoal: currentGoal
         };
-        
+
+        try {
+            const response = await api.post('/fitness_profile/save', payload);
+
+            if (response.data) {
+                console.log(response);
+                navigation.navigate('WorkoutCreate')
+
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+
         console.log("Profile Data ready for API:", payload);
     };
 
     const getInputStyle = (fieldName: string) => {
         return [
-            styles.input, 
+            styles.input,
             focusedField === fieldName ? styles.inputFocused : {}
         ];
     };
     const renderGoalOption = ({ item }: { item: string }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={styles.modalOption}
             onPress={() => {
                 setCurrentGoal(item);
@@ -61,7 +77,7 @@ const FitnessProfile = ({ navigation }: any) => {
             }}
         >
             <Text style={[
-                styles.modalOptionText, 
+                styles.modalOptionText,
                 currentGoal === item && { color: BRAND_LIME, fontWeight: 'bold' } // Highlight selected
             ]}>
                 {item}
@@ -82,8 +98,8 @@ const FitnessProfile = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                <ScrollView 
-                    contentContainerStyle={styles.scrollContainer} 
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
@@ -147,7 +163,7 @@ const FitnessProfile = ({ navigation }: any) => {
                                 placeholderTextColor={PLACEHOLDER_COLOR}
                                 value={sportsHistory}
                                 onChangeText={setSportsHistory}
-                                keyboardType="default" 
+                                keyboardType="default"
                                 onFocus={() => setFocusedField('sportsHistory')}
                                 onBlur={() => setFocusedField(null)}
                             />
@@ -156,9 +172,9 @@ const FitnessProfile = ({ navigation }: any) => {
                         {/* Goal Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Current Goal</Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[
-                                    styles.input, 
+                                    styles.input,
                                     styles.dropdownTrigger,
                                     isGoalMenuVisible && styles.inputFocused // Highlight when menu is open
                                 ]}
@@ -166,7 +182,7 @@ const FitnessProfile = ({ navigation }: any) => {
                                 activeOpacity={0.8}
                             >
                                 <Text style={[
-                                    styles.dropdownText, 
+                                    styles.dropdownText,
                                     !currentGoal && { color: PLACEHOLDER_COLOR }
                                 ]}>
                                     {currentGoal ? currentGoal : "Select your goal"}
@@ -183,9 +199,9 @@ const FitnessProfile = ({ navigation }: any) => {
                     animationType="fade"
                     onRequestClose={() => setIsGoalMenuVisible(false)} // For Android back button
                 >
-                    <TouchableOpacity 
-                        style={styles.modalOverlay} 
-                        activeOpacity={1} 
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
                         onPress={() => setIsGoalMenuVisible(false)} // Close if clicked outside
                     >
                         <View style={styles.modalContent}>
@@ -202,12 +218,12 @@ const FitnessProfile = ({ navigation }: any) => {
 
                 {/* Bottom Navigation Area */}
                 <View style={styles.bottomNav}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => navigation.goBack()}
                     >
-                        
-                        <Image style={styles.left} source={require('../assets/left.png')}/>
+
+                        <Image style={styles.left} source={require('../assets/left.png')} />
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={handleSaveProfile} style={styles.primaryButton}>
@@ -222,17 +238,17 @@ const FitnessProfile = ({ navigation }: any) => {
 
 export default FitnessProfile;
 
-const BG_DARK = '#151515'; 
-const CARD_DARK = '#1C1C1E'; 
-const BRAND_PURPLE = '#A084E8'; 
+const BG_DARK = '#151515';
+const CARD_DARK = '#1C1C1E';
+const BRAND_PURPLE = '#A084E8';
 const BRAND_LIME = '#d6fa6f';
 const TEXT_WHITE = '#FFFFFF';
-const TEXT_MUTED = '#8E8E93'; 
-const BORDER_DARK = '#2C2C2E'; 
+const TEXT_MUTED = '#8E8E93';
+const BORDER_DARK = '#2C2C2E';
 const PLACEHOLDER_COLOR = '#666666';
 
 const styles = StyleSheet.create({
-   safeArea: {
+    safeArea: {
         flex: 1,
         backgroundColor: BG_DARK,
     },
@@ -253,7 +269,7 @@ const styles = StyleSheet.create({
     },
     progressBarFill: {
         height: 6,
-        backgroundColor: BRAND_PURPLE, 
+        backgroundColor: BRAND_PURPLE,
         borderRadius: 3,
     },
     scrollContainer: {
@@ -262,9 +278,9 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         paddingTop: 10,
     },
-    left:{
-        width:30,
-        height:30,
+    left: {
+        width: 30,
+        height: 30,
         tintColor: TEXT_WHITE // Just in case your icon is dark, this makes it white
     },
     title: {
@@ -289,14 +305,14 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: TEXT_WHITE, 
+        color: TEXT_WHITE,
         marginBottom: 8,
     },
     input: {
         width: '100%',
         height: 55,
-        backgroundColor: CARD_DARK, 
-        borderRadius: 16, 
+        backgroundColor: CARD_DARK,
+        borderRadius: 16,
         paddingHorizontal: 15,
         color: TEXT_WHITE,
         fontSize: 16,
@@ -304,10 +320,10 @@ const styles = StyleSheet.create({
         borderColor: BORDER_DARK,
     },
     inputFocused: {
-        borderColor: BRAND_PURPLE, 
+        borderColor: BRAND_PURPLE,
         backgroundColor: '#242038',
     },
-    
+
     // --- Custom Dropdown Styles ---
     dropdownTrigger: {
         flexDirection: 'row',
@@ -367,12 +383,12 @@ const styles = StyleSheet.create({
         paddingBottom: Platform.OS === 'ios' ? 10 : 25,
         backgroundColor: BG_DARK,
         borderTopWidth: 1,
-        borderTopColor: BORDER_DARK, 
+        borderTopColor: BORDER_DARK,
     },
     backButton: {
         width: 55,
         height: 55,
-        borderRadius: 27.5, 
+        borderRadius: 27.5,
         borderWidth: 1.5,
         borderColor: BORDER_DARK,
         backgroundColor: CARD_DARK,
@@ -381,15 +397,15 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
     primaryButton: {
-        flex: 1, 
+        flex: 1,
         height: 55,
-        backgroundColor: BRAND_LIME, 
-        borderRadius: 27.5, 
+        backgroundColor: BRAND_LIME,
+        borderRadius: 27.5,
         justifyContent: 'center',
         alignItems: 'center',
     },
     primaryButtonText: {
-        color: BG_DARK, 
+        color: BG_DARK,
         fontSize: 18,
         fontWeight: '700',
     }

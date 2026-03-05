@@ -31,10 +31,9 @@ const Login = ({ navigation }: any) => {
                 password: password
             });
             if (response.data.data) {
-
                 console.log(response.data.data);
                 await login(response.data.data)
-                //  navigation.navigate('MainTabs');
+           
             }
 
         } catch (error) {
