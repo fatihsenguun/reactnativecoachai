@@ -32,6 +32,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (userData: User) => Promise<void>;
     logout: () => void;
+    getUser: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -74,6 +75,15 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         clearTokens();
     };
+    const getUser = async () => {
+        try {
+            const response = await api.get("/user", {})
+            const userProfile = response.data.data ? response.data.data : response.data;
+            setUser(userProfile);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
 
     useEffect(() => {
@@ -81,7 +91,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, curTokens, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, curTokens, isLoading, login, logout, getUser }}>
             {children}
         </AuthContext.Provider>
     );
