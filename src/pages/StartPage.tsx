@@ -17,15 +17,14 @@ const StartPage = ({ navigation }: any) => {
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 
-                {/* Background Glow Effect */}
-                <View style={styles.glowOrb} />
+              
 
                 {/* Hero Image Section */}
                 <View style={styles.imageContainer}>
                     <Image 
                         source={require('../assets/start.png')} 
                         style={styles.image} 
-                        resizeMode='contain' 
+                        resizeMode='center' 
                     />
                 </View>
 
@@ -75,44 +74,34 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between', 
     },
 
-    glowOrb: {
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: width * 0.8,
-        height: width * 0.8,
-        backgroundColor: BRAND_PURPLE,
-        borderRadius: width * 0.4,
-        opacity: 0.15, 
-        transform: [{ scaleX: 1.2 }], 
-    },
+
     imageContainer: {
         flex: 1.2, 
         justifyContent: 'center', 
         alignItems: 'center',    
         width: '100%',
-        paddingTop: 40, 
+   marginTop:100,
+
     },
     image: {
-        width: '85%', 
-        height: '85%',
-        // Optional: drop shadow on the image itself if it's a transparent PNG
+        width: '100%', 
+        height: '100%',
         shadowColor: BRAND_PURPLE,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
     },
     bottomContent: {
-        flex: 1, // Takes up remaining space
-        justifyContent: 'flex-end', // Pushes content to the bottom
+        flex: 1,
+        justifyContent: 'flex-end', 
         paddingHorizontal: 35,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 60, // Extra padding at the bottom
+        paddingBottom: Platform.OS === 'ios' ? 40 : 60, 
     },
     titleContainer: {
         marginBottom: 16,
     },
     title: {
-        fontSize: 38, // Much larger and punchier
+        fontSize: 38, 
         fontWeight: '900',
         color: TEXT_WHITE,
         textAlign: 'center',
@@ -120,14 +109,14 @@ const styles = StyleSheet.create({
         lineHeight: 44,
     },
     titleHighlight: {
-        color: BRAND_PURPLE, // Makes the second line pop
+        color: BRAND_PURPLE, 
     },
     subtitle: {
         fontSize: 16,
         color: TEXT_MUTED,
         textAlign: 'center',
         lineHeight: 24,
-        marginBottom: 45, // Creates space before the button
+        marginBottom: 45, 
         paddingHorizontal: 10,
     },
     button: {
