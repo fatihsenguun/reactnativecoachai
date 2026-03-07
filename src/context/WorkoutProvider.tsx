@@ -85,9 +85,7 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    useEffect(() => {
-        fetchCurrentProgram();
-    }, []);
+  
 
     return (
         <WorkoutContext.Provider value={{ fetchCurrentProgram, programData, todaySession, isLoading, stats }}>

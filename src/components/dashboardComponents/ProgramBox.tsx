@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useWorkout } from '../../context/WorkoutProvider'; // Adjust path if needed
 
 const ProgramBox = () => {
 
-    const { isLoading, programData, todaySession, stats } = useWorkout();
-    
+    useEffect(() => {
+        fetchCurrentProgram();
+
+
+    }, [])
+    const { isLoading, programData, todaySession, stats, fetchCurrentProgram } = useWorkout();
+
     const navigation = useNavigation<any>();
 
     if (isLoading) {
