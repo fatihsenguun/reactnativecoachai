@@ -6,11 +6,13 @@ import { useAuth } from '../context/AuthProvider'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import MainTabs from './MainTabs'
 import OnBoarding from './OnBoarding'
+import { useWorkout } from '../context/WorkoutProvider'
 
 const RootStack = () => {
 
     const Stack = createNativeStackNavigator();
     const { user, isLoading } = useAuth();
+ 
 
     if (isLoading) {
         return (
@@ -27,7 +29,6 @@ const RootStack = () => {
                         user.onboardingCompleted ?
                             (<Stack.Screen name="Main" component={MainTabs} />) :
                             (<Stack.Screen name='OnBoarding' component={OnBoarding} />)
-                
                 ) : (
 
                 <Stack.Screen name="Auth" component={AuthStack} />

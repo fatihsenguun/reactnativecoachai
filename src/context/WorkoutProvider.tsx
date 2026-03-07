@@ -39,8 +39,6 @@ export const WorkoutContext = createContext<WorkoutContextType | null>(null);
 
 const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
-    
-
     const [programData, setProgramData] = useState<WorkoutProgram | null>(null);
     const [todaySession, setTodaySession] = useState<WorkoutSession | null>(null);
     const [stats, setStats] = useState({ progress: 0, daysLeft: 0 });
@@ -84,9 +82,6 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
             setIsLoading(false);
         }
     };
-
-  
-
     return (
         <WorkoutContext.Provider value={{ fetchCurrentProgram, programData, todaySession, isLoading, stats }}>
             {children}

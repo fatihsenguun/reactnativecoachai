@@ -23,7 +23,7 @@ const ProgramBox = () => {
         );
     }
 
-    if (!programData) {
+    if (programData) {
         return (
             <View style={styles.emptyStateCard}>
                 <Text style={styles.emptyStateTitle}>No Active Program</Text>
@@ -32,7 +32,7 @@ const ProgramBox = () => {
                 </Text>
                 <TouchableOpacity
                     style={styles.createProgramBtn}
-                    onPress={() => navigation.navigate('WorkoutCreate')}
+                  onPress={() => navigation.navigate('OnBoarding', { screen: 'WorkoutCreate' })}
                     activeOpacity={0.8}
                 >
                     <Text style={styles.createProgramBtnText}>+ Create New Program</Text>
