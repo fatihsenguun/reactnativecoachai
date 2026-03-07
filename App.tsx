@@ -6,12 +6,15 @@ import FitnessProfile from './src/pages/FitnessProfile';
 import StartPage from './src/pages/StartPage';
 import OnBoarding from './src/navigation/OnBoarding';
 import { NavigationContainer } from '@react-navigation/native';
+import RootProvider from './src/context/RootProvider';
 export default function App() {
   return (
-   
-    <AuthProvider>
-     <RootStack/>
-    </AuthProvider>
+
+    <RootProvider>
+      <RootStack />
+    </RootProvider>
+
+
 
 
   );

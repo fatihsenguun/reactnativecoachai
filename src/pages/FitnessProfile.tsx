@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
@@ -11,31 +11,32 @@ import {
     Image,
     FlatList,
     Modal,
-
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../config/apiClient';
-import { useNavigation } from '@react-navigation/native';
-
 
 const GOAL_OPTIONS = [
-    "Gaining Muscle",
-    "Losing Weight",
-    "Improving Endurance",
-    "General Fitness",
-    "Flexibility & Mobility"
+    { title: "Gaining Muscle", icon: "💪" },
+    { title: "Losing Weight", icon: "🔥" },
+    { title: "Improving Endurance", icon: "🏃‍♂️" },
+    { title: "General Fitness", icon: "🧘‍♂️" },
+    { title: "Flexibility & Mobility", icon: "🤸‍♂️" }
 ];
 
-const FitnessProfile = ({ navigation }: any) => {
+const FitnessProfile = ({ route, navigation }: any) => {
     const [weightKg, setWeightKg] = useState('');
     const [heightCm, setHeightCm] = useState('');
     const [age, setAge] = useState('');
     const [sportsHistory, setSportsHistory] = useState('');
     const [currentGoal, setCurrentGoal] = useState('');
     const [isGoalMenuVisible, setIsGoalMenuVisible] = useState(false);
-
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (route.params?.primaryGoal) {
+            setCurrentGoal(route.params.primaryGoal);
+        }
+    }, [route.params?.primaryGoal]);
 
     const handleSaveProfile = async () => {
         const payload = {
@@ -51,10 +52,8 @@ const FitnessProfile = ({ navigation }: any) => {
 
             if (response.data) {
                 console.log(response);
-                navigation.navigate('WorkoutCreate')
-
+                navigation.navigate('WorkoutCreate');
             }
-
         } catch (error) {
             console.error(error);
         }
@@ -68,23 +67,6 @@ const FitnessProfile = ({ navigation }: any) => {
             focusedField === fieldName ? styles.inputFocused : {}
         ];
     };
-    const renderGoalOption = ({ item }: { item: string }) => (
-        <TouchableOpacity
-            style={styles.modalOption}
-            onPress={() => {
-                setCurrentGoal(item);
-                setIsGoalMenuVisible(false); // Close menu on selection
-            }}
-        >
-            <Text style={[
-                styles.modalOptionText,
-                currentGoal === item && { color: BRAND_LIME, fontWeight: 'bold' } // Highlight selected
-            ]}>
-                {item}
-            </Text>
-        </TouchableOpacity>
-    );
-
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -109,6 +91,27 @@ const FitnessProfile = ({ navigation }: any) => {
                     </Text>
 
                     <View style={styles.form}>
+                        {/* Goal Input - Triggers the Bottom Sheet */}
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Current Goal</Text>
+                            <TouchableOpacity
+                                style={[
+                                    styles.input,
+                                    styles.dropdownTrigger,
+                                    isGoalMenuVisible && styles.inputFocused
+                                ]}
+                                onPress={() => setIsGoalMenuVisible(true)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[
+                                    styles.dropdownText,
+                                    !currentGoal && { color: PLACEHOLDER_COLOR }
+                                ]}>
+                                    {currentGoal ? currentGoal : "Select your goal"}
+                                </Text>
+                                <Text style={styles.dropdownArrow}>▼</Text>
+                            </TouchableOpacity>
+                        </View>
                         {/* Weight Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Weight (kg)</Text>
@@ -169,51 +172,59 @@ const FitnessProfile = ({ navigation }: any) => {
                             />
                         </View>
 
-                        {/* Goal Input */}
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Current Goal</Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.input,
-                                    styles.dropdownTrigger,
-                                    isGoalMenuVisible && styles.inputFocused // Highlight when menu is open
-                                ]}
-                                onPress={() => setIsGoalMenuVisible(true)}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={[
-                                    styles.dropdownText,
-                                    !currentGoal && { color: PLACEHOLDER_COLOR }
-                                ]}>
-                                    {currentGoal ? currentGoal : "Select your goal"}
-                                </Text>
-                                {/* A simple downward arrow using text */}
-                                <Text style={styles.dropdownArrow}>▼</Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
                 </ScrollView>
+
+                {/*  PREMIUM BOTTOM SHEET MODAL */}
                 <Modal
                     visible={isGoalMenuVisible}
                     transparent={true}
-                    animationType="fade"
-                    onRequestClose={() => setIsGoalMenuVisible(false)} // For Android back button
+                    animationType='slide'
+                    onRequestClose={() => setIsGoalMenuVisible(false)}
                 >
-                    <TouchableOpacity
-                        style={styles.modalOverlay}
-                        activeOpacity={1}
-                        onPress={() => setIsGoalMenuVisible(false)} // Close if clicked outside
-                    >
+                    <View style={styles.modalOverlay}>
+
+                        <TouchableOpacity
+                            style={styles.modalDismissArea}
+                            activeOpacity={1}
+                            onPress={() => setIsGoalMenuVisible(false)}
+                        />
+
                         <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>Select Goal</Text>
+                            <View style={styles.modalDragIndicator} />
+
+                            <Text style={styles.modalTitle}>Select Your Goal</Text>
+                            <Text style={styles.modalSubtitle}>What are you trying to achieve?</Text>
+
                             <FlatList
                                 data={GOAL_OPTIONS}
-                                keyExtractor={(item) => item}
-                                renderItem={renderGoalOption}
+                                keyExtractor={(item) => item.title}
+                                showsVerticalScrollIndicator={false}
                                 bounces={false}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.goalCard,
+                                            currentGoal === item.title && styles.goalCardSelected
+                                        ]}
+                                        activeOpacity={0.7}
+                                        onPress={() => {
+                                            setCurrentGoal(item.title);
+                                            setIsGoalMenuVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.goalIcon}>{item.icon}</Text>
+                                        <Text style={[
+                                            styles.goalCardText,
+                                            currentGoal === item.title && styles.goalCardTextSelected
+                                        ]}>
+                                            {item.title}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             />
                         </View>
-                    </TouchableOpacity>
+                    </View>
                 </Modal>
 
                 {/* Bottom Navigation Area */}
@@ -222,7 +233,6 @@ const FitnessProfile = ({ navigation }: any) => {
                         style={styles.backButton}
                         onPress={() => navigation.goBack()}
                     >
-
                         <Image style={styles.left} source={require('../assets/left.png')} />
                     </TouchableOpacity>
 
@@ -238,6 +248,7 @@ const FitnessProfile = ({ navigation }: any) => {
 
 export default FitnessProfile;
 
+// --- Colors ---
 const BG_DARK = '#151515';
 const CARD_DARK = '#1C1C1E';
 const BRAND_PURPLE = '#A084E8';
@@ -248,165 +259,127 @@ const BORDER_DARK = '#2C2C2E';
 const PLACEHOLDER_COLOR = '#666666';
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: BG_DARK,
-    },
+    safeArea: { flex: 1, backgroundColor: BG_DARK },
     container: {
         flex: 1,
-        backgroundColor: BG_DARK,
+        backgroundColor: BG_DARK
     },
     header: {
         paddingHorizontal: 25,
         paddingTop: 20,
-        paddingBottom: 10,
+        paddingBottom: 10
     },
     progressBarBackground: {
         height: 6,
         backgroundColor: CARD_DARK,
         borderRadius: 3,
-        width: '100%',
+        width: '100%'
     },
-    progressBarFill: {
-        height: 6,
-        backgroundColor: BRAND_PURPLE,
-        borderRadius: 3,
-    },
-    scrollContainer: {
-        flexGrow: 1,
-        paddingHorizontal: 25,
-        paddingBottom: 40,
-        paddingTop: 10,
-    },
-    left: {
-        width: 30,
-        height: 30,
-        tintColor: TEXT_WHITE // Just in case your icon is dark, this makes it white
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: TEXT_WHITE,
-        marginBottom: 12,
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: TEXT_MUTED,
-        lineHeight: 20,
-        marginBottom: 35,
-    },
-    form: {
-        width: '100%',
-    },
-    inputContainer: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: TEXT_WHITE,
-        marginBottom: 8,
-    },
+    progressBarFill: { height: 6, backgroundColor: BRAND_PURPLE, borderRadius: 3, width: '30%' }, // Give it a width so it shows progress!
+    scrollContainer: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, paddingTop: 10 },
+    left: { width: 30, height: 30, tintColor: TEXT_WHITE },
+    title: { fontSize: 28, fontWeight: '800', color: TEXT_WHITE, marginBottom: 12, letterSpacing: -0.5 },
+    subtitle: { fontSize: 14, color: TEXT_MUTED, lineHeight: 20, marginBottom: 35 },
+    form: { width: '100%' },
+    inputContainer: { marginBottom: 20 },
+    label: { fontSize: 14, fontWeight: '600', color: TEXT_WHITE, marginBottom: 8 },
     input: {
-        width: '100%',
-        height: 55,
-        backgroundColor: CARD_DARK,
-        borderRadius: 16,
-        paddingHorizontal: 15,
-        color: TEXT_WHITE,
-        fontSize: 16,
-        borderWidth: 1.5,
-        borderColor: BORDER_DARK,
+        width: '100%', height: 55, backgroundColor: CARD_DARK, borderRadius: 16,
+        paddingHorizontal: 15, color: TEXT_WHITE, fontSize: 16, borderWidth: 1.5, borderColor: BORDER_DARK,
     },
-    inputFocused: {
-        borderColor: BRAND_PURPLE,
-        backgroundColor: '#242038',
-    },
-
-    // --- Custom Dropdown Styles ---
+    inputFocused: { borderColor: BRAND_PURPLE, backgroundColor: '#242038' },
     dropdownTrigger: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'space-between'
     },
     dropdownText: {
         color: TEXT_WHITE,
-        fontSize: 16,
+        fontSize: 16
     },
     dropdownArrow: {
         color: TEXT_MUTED,
-        fontSize: 12,
+        fontSize: 12
     },
+
+
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)', // Darkens the screen behind the menu
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-end',
+    },
+    modalDismissArea: {
+        flex: 1,
     },
     modalContent: {
-        width: '100%',
         backgroundColor: CARD_DARK,
-        borderRadius: 20,
-        padding: 20,
-        borderWidth: 1.5,
-        borderColor: BRAND_PURPLE,
-        shadowColor: BRAND_PURPLE,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 20,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        paddingHorizontal: 25,
+        paddingTop: 15,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 25,
+        maxHeight: '80%',
+    },
+    modalDragIndicator: {
+        width: 40,
+        height: 5,
+        backgroundColor: BORDER_DARK,
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 20,
     },
     modalTitle: {
         color: TEXT_WHITE,
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: 'bold',
-        marginBottom: 15,
-        textAlign: 'center',
+        marginBottom: 5,
     },
-    modalOption: {
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: BORDER_DARK,
-        alignItems: 'center',
+    modalSubtitle: {
+        fontSize: 14,
+        color: TEXT_MUTED,
+        marginBottom: 25,
     },
-    modalOptionText: {
-        color: TEXT_WHITE,
-        fontSize: 16,
-    },
-    // ------------------------------
-
-    bottomNav: {
+    goalCard: {
         flexDirection: 'row',
-        paddingHorizontal: 25,
-        paddingVertical: 15,
-        paddingBottom: Platform.OS === 'ios' ? 10 : 25,
+        alignItems: 'center',
         backgroundColor: BG_DARK,
-        borderTopWidth: 1,
-        borderTopColor: BORDER_DARK,
-    },
-    backButton: {
-        width: 55,
-        height: 55,
-        borderRadius: 27.5,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 12,
         borderWidth: 1.5,
         borderColor: BORDER_DARK,
-        backgroundColor: CARD_DARK,
-        justifyContent: 'center',
-        alignItems: 'center',
+    },
+    goalCardSelected: {
+        borderColor: BRAND_LIME,
+        backgroundColor: '#2A2D1C',
+    },
+    goalIcon: {
+        fontSize: 24,
         marginRight: 15,
     },
-    primaryButton: {
-        flex: 1,
-        height: 55,
-        backgroundColor: BRAND_LIME,
-        borderRadius: 27.5,
-        justifyContent: 'center',
-        alignItems: 'center',
+    goalCardText: {
+        color: TEXT_WHITE,
+        fontSize: 16,
+        fontWeight: '600',
     },
-    primaryButtonText: {
-        color: BG_DARK,
-        fontSize: 18,
-        fontWeight: '700',
-    }
+    goalCardTextSelected: {
+        color: BRAND_LIME,
+    },
+
+
+    bottomNav: {
+        flexDirection: 'row', paddingHorizontal: 25, paddingVertical: 15,
+        paddingBottom: Platform.OS === 'ios' ? 10 : 25, backgroundColor: BG_DARK,
+        borderTopWidth: 1, borderTopColor: BORDER_DARK,
+    },
+    backButton: {
+        width: 55, height: 55, borderRadius: 27.5, borderWidth: 1.5,
+        borderColor: BORDER_DARK, backgroundColor: CARD_DARK, justifyContent: 'center',
+        alignItems: 'center', marginRight: 15,
+    },
+    primaryButton: {
+        flex: 1, height: 55, backgroundColor: BRAND_LIME, borderRadius: 27.5,
+        justifyContent: 'center', alignItems: 'center',
+    },
+    primaryButtonText: { color: BG_DARK, fontSize: 18, fontWeight: '700' }
 });
