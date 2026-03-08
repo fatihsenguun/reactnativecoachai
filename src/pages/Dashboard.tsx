@@ -9,11 +9,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ProgramBox from '../components/dashboardComponents/ProgramBox';
+import { useAuth } from '../context/AuthProvider';
 
 const Dashboard = ({ navigation }: any) => {
+    const { user } = useAuth();
+    
+    const firstName = user?.firstName || 'Fatih';
 
     const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const currentDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1; // 0 is Monday, 6 is Sunday
+    const currentDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -21,22 +25,13 @@ const Dashboard = ({ navigation }: any) => {
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
             >
-                {/* --- HEADER --- */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Ready to work?</Text>
-                        <Text style={styles.name}>Hello, Fatih 👋</Text>
+                        <Text style={styles.greeting}>READY TO WORK?</Text>
+                        <Text style={styles.name}>Hello, {firstName} 👋</Text>
                     </View>
-                    <TouchableOpacity style={styles.profileAvatar}>
-                        <Image 
-                            source={require('../assets/women.png')} 
-                            style={styles.avatarImage}
-                            resizeMode="cover"
-                        />
-                    </TouchableOpacity>
                 </View>
 
-                {/* --- WEEKLY TRACKER --- */}
                 <View style={styles.weeklyTracker}>
                     {weekDays.map((day, index) => {
                         const isToday = index === currentDayIndex;
@@ -67,21 +62,24 @@ const Dashboard = ({ navigation }: any) => {
                 <ProgramBox /> 
                 
                 <Text style={styles.sectionTitle}>Weekly Overview</Text>
+                
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <View style={[styles.iconBox, { backgroundColor: '#d6fa6f20' }]}>
-                            <Text style={styles.iconText}>🔥</Text>
-                        </View>
+                        <Image 
+                            source={require('../assets/fire.png')} 
+                            style={styles.statIcon} 
+                        />
                         <Text style={styles.statValue}>1,240</Text>
-                        <Text style={styles.statLabel}>Kcal Burned</Text>
+                        <Text style={styles.statLabel}>KCAL BURNED</Text>
                     </View>
 
                     <View style={styles.statCard}>
-                        <View style={[styles.iconBox, { backgroundColor: '#A084E820' }]}>
-                            <Text style={styles.iconText}>⚡</Text>
-                        </View>
+                        <Image 
+                            source={require('../assets/flash.png')} 
+                            style={styles.statIcon} 
+                        />
                         <Text style={styles.statValue}>3</Text>
-                        <Text style={styles.statLabel}>Workouts Done</Text>
+                        <Text style={styles.statLabel}>WORKOUTS DONE</Text>
                     </View>
                 </View>
 
@@ -92,154 +90,129 @@ const Dashboard = ({ navigation }: any) => {
 
 export default Dashboard;
 
-// --- Colors ---
-const BG_DARK = '#151515';
-const CARD_DARK = '#1C1C1E';
-const BRAND_PURPLE = '#A084E8';
-const BRAND_LIME = '#d6fa6f';
-const TEXT_WHITE = '#FFFFFF';
-const TEXT_MUTED = '#8E8E93';
-const BORDER_DARK = '#2C2C2E';
-
-// --- Cleaned Stylesheet ---
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: BG_DARK,
+        backgroundColor: '#0A0A0A'
     },
     scrollContainer: {
         flexGrow: 1,
         paddingHorizontal: 25,
         paddingTop: 20,
-        paddingBottom: 40,
+        paddingBottom: 40
     },
-
-    // Header
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 30,
+        marginBottom: 35
     },
     greeting: {
-        fontSize: 14,
-        color: BRAND_LIME,
-        fontWeight: '700',
+        fontSize: 12,
+        color: '#A084E8',
+        fontWeight: '900',
         textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginBottom: 4,
+        letterSpacing: 2,
+        marginBottom: 8
     },
     name: {
-        fontSize: 26,
-        fontWeight: '800',
-        color: TEXT_WHITE,
-        letterSpacing: -0.5,
+        fontSize: 32,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        letterSpacing: -1
     },
-    profileAvatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: CARD_DARK,
-        borderWidth: 2,
-        borderColor: BRAND_PURPLE,
-        overflow: 'hidden',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarImage: {
-        width: '100%',
-        height: '100%',
-    },
-
-    // Weekly Tracker
     weeklyTracker: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 35,
-        paddingHorizontal: 5,
+        marginBottom: 40,
+        paddingHorizontal: 5
     },
     dayBubbleContainer: {
-        alignItems: 'center',
+        alignItems: 'center'
     },
     dayBubble: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: CARD_DARK,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#141415',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: BORDER_DARK,
+        borderColor: '#242426'
     },
     dayBubbleActive: {
-        backgroundColor: BRAND_PURPLE,
-        borderColor: BRAND_PURPLE,
+        backgroundColor: '#D6FA6F',
+        borderColor: '#D6FA6F',
+        shadowColor: '#D6FA6F',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6
     },
     dayBubblePast: {
-        backgroundColor: '#242426',
+        backgroundColor: '#0A0A0A',
+        borderColor: '#1C1C1E'
     },
     dayText: {
-        color: TEXT_MUTED,
-        fontSize: 14,
-        fontWeight: '600',
+        color: '#8A8A8E',
+        fontSize: 15,
+        fontWeight: '700'
     },
     dayTextActive: {
-        color: TEXT_WHITE,
-        fontWeight: 'bold',
+        color: '#0A0A0A',
+        fontWeight: '900'
     },
     dayTextPast: {
-        color: '#555555',
+        color: '#444446'
     },
     todayDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: BRAND_LIME,
-        marginTop: 6,
+        backgroundColor: '#D6FA6F',
+        marginTop: 8
     },
-
-    // Section Titles
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: TEXT_WHITE,
-        marginBottom: 15,
-        letterSpacing: -0.3,
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        marginBottom: 20,
+        letterSpacing: -0.5
     },
-
-    // Stats Grid
     statsGrid: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-between'
     },
     statCard: {
         width: '48%',
-        backgroundColor: CARD_DARK,
-        borderRadius: 20,
+        backgroundColor: '#141415',
+        borderRadius: 24,
         padding: 20,
         borderWidth: 1,
-        borderColor: '#2C2C2E50',
+        borderColor: '#242426',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 5
     },
-    iconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    iconText: {
-        fontSize: 18,
+    statIcon: {
+        width: 32,
+        height: 32,
+        marginBottom: 16,
+        resizeMode: 'contain'
     },
     statValue: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: TEXT_WHITE,
-        marginBottom: 4,
+        fontSize: 26,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        marginBottom: 6,
+        letterSpacing: -0.5
     },
     statLabel: {
-        fontSize: 13,
-        color: TEXT_MUTED,
-        fontWeight: '500',
-    },
+        fontSize: 11,
+        color: '#8A8A8E',
+        fontWeight: '800',
+        letterSpacing: 1
+    }
 });

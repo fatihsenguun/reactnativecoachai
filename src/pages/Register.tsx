@@ -9,158 +9,216 @@ import {
     Platform,
     Alert,
     Image,
-    ScrollView
+    ScrollView,
+    ActivityIndicator
 } from 'react-native';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
+import axios from 'axios';
 
 const Register = ({ navigation }: any) => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [name, setName] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
+    const handleRegister = async () => {
+        if (!firstName || !lastName || !email || !password) {
+            Alert.alert("Error", "All fields are required");
+            return;
+        }
 
+        try {
+            setLoading(true);
+            const url = "http://localhost:8080/register";
+            const response = await axios.post(url, {
+                firstName,
+                lastName,
+                email,
+                password
+            });
+
+            if (response.data.result) {
+                Alert.alert("Success", "Account created!", [
+                    { text: "Login", onPress: () => navigation.navigate('Login') }
+                ]);
+            }
+        } catch (error) {
+            Alert.alert("Error", "Registration failed");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-
-        >
-            <View style={styles.imageBox}>
-                <Image style={styles.image} source={require("../assets/women.png")} resizeMode='center' />
-            </View>
-            <View style={styles.box}>
-                <Text style={styles.title}>Welcome</Text>
-                <Text style={styles.subtitle}>Create your CoachAI account</Text>
-
-                <View style={styles.inputGroup}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Name"
-                        placeholderTextColor="#ffffff80"
-                        value={name}
-                        onChangeText={setName}
-                        secureTextEntry
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Email"
-                        placeholderTextColor="#ffffff80"
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Password"
-                        placeholderTextColor="#ffffff80"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
-                </View>
-
-                <TouchableOpacity style={styles.button} >
-                    <Text style={styles.buttonText}>CREATE</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.linkContainer}
-                    onPress={() => navigation.navigate('Login')}
+        <SafeAreaView style={styles.safeArea}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+            >
+                <ScrollView 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
                 >
-                    <Text style={styles.linkText}>
-                        Have an account ? <Text style={styles.linkHighlight}>Sign in</Text>
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+                    <View style={styles.content}>
+                        <Image 
+                            style={styles.logo} 
+                            source={require("../assets/women.png")} 
+                            resizeMode='contain' 
+                        />
+                        
+                        <Text style={styles.mainTitle}>Sign Up</Text>
+
+                        <View style={styles.inputWrapper}>
+                            <View style={styles.row}>
+                                <TextInput
+                                    style={[styles.input, styles.halfInput]}
+                                    placeholder="First"
+                                    placeholderTextColor="#444"
+                                    value={firstName}
+                                    onChangeText={setFirstName}
+                                />
+                                <TextInput
+                                    style={[styles.input, styles.halfInput]}
+                                    placeholder="Last"
+                                    placeholderTextColor="#444"
+                                    value={lastName}
+                                    onChangeText={setLastName}
+                                />
+                            </View>
+                            
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email"
+                                placeholderTextColor="#444"
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                            />
+                            
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password"
+                                placeholderTextColor="#444"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry
+                            />
+                        </View>
+
+                        <TouchableOpacity 
+                            onPress={handleRegister} 
+                            style={styles.primaryButton}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="#000" />
+                            ) : (
+                                <Text style={styles.buttonText}>Create Account</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Login')}
+                            style={styles.secondaryAction}
+                        >
+                            <Text style={styles.footerText}>
+                                Have an account? <Text style={styles.highlight}>Sign In</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 export default Register;
 
 const styles = StyleSheet.create({
-    image: {
-        width: '100%',
-        height: '100%'
-    },
-    imageBox: {
-        width: '100%',
-        height: 200
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#000'
     },
     container: {
-        backgroundColor: '#151515', //  background color
-        flex: 1,
+        flex: 1
+    },
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'center'
+    },
+    content: {
+        paddingHorizontal: 40,
         alignItems: 'center',
-        justifyContent: 'center',
+        paddingVertical: 20
     },
-    box: {
-        width: 350,
-        height: 480,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 30,
-        padding: 25,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
+    logo: {
+        width: 220,
+        height: 220,
+        marginBottom: 20
     },
-    title: {
-        fontSize: 28,
-        fontWeight: '900',
-        color: '#ffffff',
-        marginBottom: 5,
+    mainTitle: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#FFF',
+        marginBottom: 40,
+        letterSpacing: -1
     },
-    subtitle: {
-        fontSize: 14,
-        color: '#ffffffcc',
-        marginBottom: 30,
-    },
-    inputGroup: {
+    inputWrapper: {
         width: '100%',
-        marginBottom: 20,
+        gap: 12,
+        marginBottom: 30
+    },
+    row: {
+        flexDirection: 'row',
+        width: '100%',
+        gap: 12
+    },
+    halfInput: {
+        flex: 1
     },
     input: {
         width: '100%',
         height: 55,
-        backgroundColor: '#ffffff20',
-        borderRadius: 15,
-        paddingHorizontal: 15,
-        color: '#fff',
+        backgroundColor: '#111',
+        borderRadius: 12,
+        paddingHorizontal: 20,
+        color: '#FFF',
         fontSize: 16,
-        marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#ffffff30',
+        borderColor: '#222'
     },
-    button: {
+    primaryButton: {
         width: '100%',
         height: 55,
-        backgroundColor: '#d6fa6f', // neon lime color
-        borderRadius: 15,
-        alignItems: 'center',
+        backgroundColor: '#D6FA6F',
+        borderRadius: 12,
         justifyContent: 'center',
-        marginTop: 10,
+        alignItems: 'center',
+        shadowColor: '#D6FA6F',
+        shadowOffset: { 
+            width: 0, 
+            height: 4 
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5
     },
     buttonText: {
-        color: '#151515',
-        fontSize: 18,
-        fontWeight: 'bold',
-        letterSpacing: 1,
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '700'
     },
-    linkContainer: {
-        marginTop: 25,
+    secondaryAction: {
+        marginTop: 25
     },
-    linkText: {
-        color: '#ffffffcc',
-        fontSize: 14,
+    footerText: {
+        color: '#666',
+        fontSize: 14
     },
-    linkHighlight: {
-        color: '#d6fa6f',
-        fontWeight: 'bold',
+    highlight: {
+        color: '#D6FA6F',
+        fontWeight: '600'
     }
 });

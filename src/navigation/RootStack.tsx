@@ -27,7 +27,7 @@ const RootStack = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {user?(
+                {user?.firstName?(
                         fitnessProfile ?
                             (<Stack.Screen name="Main" component={MainTabs} />) :
                             (<Stack.Screen name='OnBoarding' component={OnBoarding} />)

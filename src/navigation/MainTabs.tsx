@@ -5,13 +5,13 @@ import Dashboard from '../pages/Dashboard';
 import Profile from '../pages/Profile';
 import DashboardStack from './DashboardStack';
 import WorkoutCreate from '../pages/WorkoutCreate';
+import BottomTabs from './BottomTabs';
 
 const MainTabs = () => {
     const Stack = createNativeStackNavigator();
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="DashboardMain" component={DashboardStack} />
-            <Stack.Screen name="Profile" component={Profile} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="BottomTabs" component={BottomTabs} />
             <Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />
         </Stack.Navigator>
     )

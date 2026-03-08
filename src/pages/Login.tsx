@@ -1,7 +1,4 @@
-import axios from 'axios';
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthProvider'
-
 import {
     StyleSheet,
     Text,
@@ -11,9 +8,12 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
-    Image
+    Image,
+    ActivityIndicator
 } from 'react-native';
-
+import axios from 'axios';
+import { useAuth } from '../context/AuthProvider';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Login = ({ navigation }: any) => {
     const { login } = useAuth();
@@ -22,159 +22,166 @@ const Login = ({ navigation }: any) => {
     const [loading, setLoading] = useState(false);
 
     const handleSignin = async () => {
-        try {
-            const url = "http://localhost:8080/authenticate"
+        if (!email || !password) {
+            Alert.alert("Error", "All fields are required");
+            return;
+        }
 
+        try {
             setLoading(true);
+            const url = "http://localhost:8080/authenticate";
             const response = await axios.post(url, {
                 email: email,
                 password: password
             });
+
             if (response.data.data) {
-                console.log(response.data.data);
-                await login(response.data.data)
-           
+                await login(response.data.data);
+            } else {
+                Alert.alert("Failed", "Check your credentials");
             }
-
         } catch (error) {
-
+            Alert.alert("Error", "Server connection failed");
+        } finally {
+            setLoading(false);
         }
-    }
-
-
-
+    };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-
-        >
-            <View style={styles.imageBox}>
-                <Image style={styles.image} source={require("../assets/women.png")} resizeMode='center' />
-            </View>
-            <View style={styles.box}>
-                <Text style={styles.title}>Welcome Back</Text>
-                <Text style={styles.subtitle}>Log in to your CoachAI account</Text>
-
-                <View style={styles.inputGroup}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Email"
-                        placeholderTextColor="#ffffff80"
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
+        <SafeAreaView style={styles.safeArea}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+            >
+                <View style={styles.content}>
+                    <Image 
+                        style={styles.logo} 
+                        source={require("../assets/women.png")} 
+                        resizeMode='contain' 
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Password"
-                        placeholderTextColor="#ffffff80"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
+                    
+                    <Text style={styles.mainTitle}>Sign In</Text>
+
+                    <View style={styles.inputWrapper}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Email"
+                            placeholderTextColor="#444"
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Password"
+                            placeholderTextColor="#444"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+                    </View>
+
+                    <TouchableOpacity 
+                        onPress={handleSignin} 
+                        style={styles.primaryButton}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#000" />
+                        ) : (
+                            <Text style={styles.buttonText}>Get Started</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Register')}
+                        style={styles.secondaryAction}
+                    >
+                        <Text style={styles.footerText}>
+                            Don't have an account? <Text style={styles.highlight}>Sign Up</Text>
+                        </Text>
+                    </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity onPress={handleSignin} style={styles.button} >
-                    <Text style={styles.buttonText}>LOGIN</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.linkContainer}
-                    onPress={() => navigation.navigate('Register')}
-                >
-                    <Text style={styles.linkText}>
-                        Don't have an account? <Text style={styles.linkHighlight}>Sing up</Text>
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
-    image: {
-        width: '100%',
-        height: '100%'
-    },
-    imageBox: {
-        width: '100%',
-        height: 200
+    safeArea: {
+        flex: 1, 
+        backgroundColor: '#000'
     },
     container: {
-        backgroundColor: '#151515', //  background color
+        flex: 1
+    },
+    content: {
         flex: 1,
-        alignItems: 'center',
+        paddingHorizontal: 40,
         justifyContent: 'center',
+        alignItems: 'center'
     },
-    box: {
-        width: 350,
-        height: 480,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 30,
-        padding: 25,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
+    logo: {
+        width: 220,
+        height: 220,
+        marginBottom: 20
     },
-    title: {
-        fontSize: 28,
-        fontWeight: '900',
-        color: '#ffffff',
-        marginBottom: 5,
+    mainTitle: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#FFF',
+        marginBottom: 40,
+        letterSpacing: -1
     },
-    subtitle: {
-        fontSize: 14,
-        color: '#ffffffcc',
-        marginBottom: 30,
-    },
-    inputGroup: {
+    inputWrapper: {
         width: '100%',
-        marginBottom: 20,
+        gap: 12,
+        marginBottom: 30
     },
     input: {
         width: '100%',
         height: 55,
-        backgroundColor: '#ffffff20',
-        borderRadius: 15,
-        paddingHorizontal: 15,
-        color: '#fff',
+        backgroundColor: '#111',
+        borderRadius: 12,
+        paddingHorizontal: 20,
+        color: '#FFF',
         fontSize: 16,
-        marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#ffffff30',
+        borderColor: '#222'
     },
-    button: {
+    primaryButton: {
         width: '100%',
         height: 55,
-        backgroundColor: '#d6fa6f', // neon lime color
-        borderRadius: 15,
-        alignItems: 'center',
+        backgroundColor: '#D6FA6F',
+        borderRadius: 12,
         justifyContent: 'center',
-        marginTop: 10,
+        alignItems: 'center',
+        shadowColor: '#D6FA6F',
+        shadowOffset: { 
+            width: 0, 
+            height: 4 
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5
     },
     buttonText: {
-        color: '#151515',
-        fontSize: 18,
-        fontWeight: 'bold',
-        letterSpacing: 1,
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '700'
     },
-    linkContainer: {
-        marginTop: 25,
+    secondaryAction: {
+        marginTop: 25
     },
-    linkText: {
-        color: '#ffffffcc',
-        fontSize: 14,
+    footerText: {
+        color: '#666',
+        fontSize: 14
     },
-    linkHighlight: {
-        color: '#d6fa6f',
-        fontWeight: 'bold',
+    highlight: {
+        color: '#D6FA6F',
+        fontWeight: '600'
     }
 });
