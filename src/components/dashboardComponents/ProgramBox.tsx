@@ -1,61 +1,84 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useWorkout } from '../../context/WorkoutProvider'; // Adjust path if needed
+import { useWorkout } from '../../context/WorkoutProvider';
 
 const ProgramBox = () => {
+    const { isLoading, programData, todaySession, stats, fetchCurrentProgram } = useWorkout();
+    const navigation = useNavigation<any>();
+
+    const isRestDay = !todaySession;
+    const isCompleted = todaySession?.completed;
 
     useEffect(() => {
         fetchCurrentProgram();
+    }, []);
 
-
-    }, [])
-    const { isLoading, programData, todaySession, stats, fetchCurrentProgram } = useWorkout();
-
-    const navigation = useNavigation<any>();
-
+    // --- STATE 1: LOADING ---
     if (isLoading) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.card, { alignItems: 'center', paddingVertical: 40 }]}>
                 <ActivityIndicator size="large" color={BRAND_LIME} />
-                <Text style={styles.loadingText}>Loading your program...</Text>
+                <Text style={styles.mutedText}>Loading your program...</Text>
             </View>
         );
     }
 
-    if (programData) {
+    // --- STATE 2: NO PROGRAM ---
+    if (!programData) {
         return (
-            <View style={styles.emptyStateCard}>
-                <Text style={styles.emptyStateTitle}>No Active Program</Text>
-                <Text style={styles.emptyStateSub}>
-                    You don't have a plan yet. Let our AI coach design the perfect 30-day program for you.
+            <View style={[styles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+                <Text style={styles.emptyTitle}>No Active Plan</Text>
+                <Text style={[styles.mutedText, { marginBottom: 25 }]}>
+                    Let our AI coach build your perfect 30-day routine.
                 </Text>
                 <TouchableOpacity
-                    style={styles.createProgramBtn}
-                  onPress={() => navigation.navigate('OnBoarding', { screen: 'WorkoutCreate' })}
+                    style={styles.primaryBtn}
+                    onPress={() => navigation.navigate('WorkoutCreate')}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.createProgramBtnText}>+ Create New Program</Text>
+                    <Text style={styles.primaryBtnText}>Create New Program</Text>
                 </TouchableOpacity>
             </View>
         );
     }
 
+    // --- STATE 3: COMPLETED (Ultra Simple & Clickable) ---
+    if (isCompleted) {
+        return (
+            <TouchableOpacity 
+                style={styles.completedSimpleCard}
+                onPress={() => navigation.navigate('WorkoutDetails', { session: todaySession })}
+                activeOpacity={0.9}
+            >
+                <Text style={styles.completedEmoji}>🏆</Text>
+                <Text style={styles.completedSimpleTitle}>Today's Workout Completed</Text>
+                <View style={styles.percentPill}>
+                    <Text style={styles.percentPillText}>⚡ {stats.progress}% Program Finished</Text>
+                </View>
+                <Text style={styles.reviewText}>Tap to review workout →</Text>
+            </TouchableOpacity>
+        );
+    }
+
+    // --- STATE 4: ACTIVE / PENDING (Normal Complex View) ---
     return (
-        <View style={styles.programCard}>
-            <View style={styles.programHeaderRow}>
-                <View style={styles.tag}>
-                    <Text style={styles.tagText}>AI GENERATED</Text>
+        <View style={styles.card}>
+
+            <View style={styles.headerRow}>
+                <View style={styles.planBadge}>
+                    <Text style={styles.planNameText} numberOfLines={1}>{programData.name}</Text>
                 </View>
                 <Text style={styles.daysLeftText}>{stats.daysLeft} days left</Text>
             </View>
 
-            <Text style={styles.programTitle}>{programData.name}</Text>
-            <Text style={styles.programFocus}>
-                {todaySession ? todaySession.name : "Rest Day - Recovery"}
-            </Text>
+            <View style={styles.focusContainer}>
+                <Text style={styles.todayFocus}>
+                    {isRestDay ? "Rest Day" : todaySession.name}
+                </Text>
+            </View>
 
-            {/* Progress Bar */}
+            {/* Premium Progress Bar */}
             <View style={styles.progressContainer}>
                 <View style={styles.progressBarBg}>
                     <View style={[styles.progressBarFill, { width: `${stats.progress}%` }]} />
@@ -63,20 +86,22 @@ const ProgramBox = () => {
                 <Text style={styles.progressText}>{stats.progress}% Completed</Text>
             </View>
 
-            {/* Action Button */}
+            {/* Smart Action Button */}
             <TouchableOpacity
                 style={[
-                    styles.startWorkoutBtn,
-                    !todaySession && { backgroundColor: CARD_DARK, borderWidth: 1, borderColor: BORDER_DARK }
+                    styles.primaryBtn,
+                    isRestDay && styles.restBtn
                 ]}
-                onPress={() => todaySession ? console.log("Navigate to Workout Details", todaySession) : console.log("Enjoy your rest")}
+                onPress={() => !isRestDay ? navigation.navigate('WorkoutDetails', { session: todaySession }) : null}
                 activeOpacity={0.8}
-                disabled={!todaySession}
+                disabled={isRestDay}
             >
-                <Text style={[styles.startWorkoutBtnText, !todaySession && { color: TEXT_WHITE }]}>
-                    {todaySession ? "Start Today's Session" : "Rest Day"}
+                <Text style={[
+                    styles.primaryBtnText,
+                    isRestDay && { color: TEXT_WHITE }
+                ]}>
+                    {isRestDay ? "Enjoy Your Rest 🧘‍♂️" : "Start Today's Workout"}
                 </Text>
-                {todaySession && <Text style={styles.arrowIcon}>→</Text>}
             </TouchableOpacity>
         </View>
     );
@@ -84,156 +109,165 @@ const ProgramBox = () => {
 
 export default ProgramBox;
 
-const BG_DARK = '#151515';
-const CARD_DARK = '#1C1C1E';
+const BG_DARK = '#0A0A0A'; 
+const CARD_DARK = '#141415'; 
 const BRAND_PURPLE = '#A084E8';
-const BRAND_LIME = '#d6fa6f';
+const BRAND_LIME = '#D6FA6F';
 const TEXT_WHITE = '#FFFFFF';
-const TEXT_MUTED = '#8E8E93';
-const BORDER_DARK = '#2C2C2E';
-
+const TEXT_MUTED = '#8A8A8E';
+const BORDER_DARK = '#242426';
 
 const styles = StyleSheet.create({
-
-    loadingContainer: {
-        backgroundColor: CARD_DARK,
-        borderRadius: 24,
-        padding: 40,
-        alignItems: 'center',
-        marginBottom: 35,
-        borderWidth: 1,
-        borderColor: BORDER_DARK,
-    },
-    loadingText: {
-        color: TEXT_MUTED,
-        marginTop: 15,
-        fontSize: 16,
-    },
-
-
-    programCard: {
+    card: {
         backgroundColor: CARD_DARK,
         borderRadius: 24,
         padding: 24,
-        marginBottom: 35,
+        marginBottom: 30,
         borderWidth: 1,
-        borderColor: '#2C2C2E80',
-        shadowColor: BRAND_PURPLE,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
+        borderColor: BORDER_DARK,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.2,
         shadowRadius: 20,
+        elevation: 10,
+    },
+    
+    // --- Completed State Styles ---
+    completedSimpleCard: {
+        backgroundColor: '#D6FA6F10',
+        borderRadius: 24,
+        padding: 30,
+        marginBottom: 30,
+        borderWidth: 1.5,
+        borderColor: BRAND_LIME,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: BRAND_LIME,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 15,
         elevation: 8,
     },
-    programHeaderRow: {
+    completedEmoji: {
+        fontSize: 48,
+        marginBottom: 12,
+    },
+    completedSimpleTitle: {
+        color: TEXT_WHITE,
+        fontSize: 20,
+        fontWeight: '900',
+        marginBottom: 16,
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    percentPill: {
+        backgroundColor: BRAND_LIME,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginBottom: 12,
+    },
+    percentPillText: {
+        color: BG_DARK,
+        fontSize: 14,
+        fontWeight: '900',
+        letterSpacing: 0.5,
+    },
+    reviewText: {
+        color: BRAND_LIME,
+        fontSize: 12,
+        fontWeight: '700',
+        opacity: 0.8,
+        marginTop: 8,
+        letterSpacing: 0.5,
+    },
+
+    // --- Active State Styles ---
+    headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 16,
     },
-    tag: {
-        backgroundColor: '#A084E820',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+    planBadge: {
+        backgroundColor: '#A084E815', 
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 8,
+        flex: 1,
+        marginRight: 15,
     },
-    tagText: {
+    planNameText: {
         color: BRAND_PURPLE,
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
-        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     daysLeftText: {
         color: TEXT_MUTED,
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 13,
+        fontWeight: '700',
     },
-    programTitle: {
-        fontSize: 24,
+    focusContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    todayFocus: {
+        fontSize: 28,
         fontWeight: '900',
         color: TEXT_WHITE,
-        marginBottom: 6,
         letterSpacing: -0.5,
-    },
-    programFocus: {
-        fontSize: 15,
-        color: '#b19cd9',
-        marginBottom: 20,
-        fontWeight: '500',
+        flex: 1,
     },
     progressContainer: {
         marginBottom: 25,
     },
     progressBarBg: {
-        height: 8,
-        backgroundColor: BG_DARK,
-        borderRadius: 4,
+        height: 6,
+        backgroundColor: '#242426',
+        borderRadius: 3,
         width: '100%',
         marginBottom: 8,
     },
     progressBarFill: {
-        height: 8,
+        height: 6,
         backgroundColor: BRAND_LIME,
-        borderRadius: 4,
+        borderRadius: 3,
     },
     progressText: {
         color: TEXT_MUTED,
         fontSize: 12,
-        fontWeight: '500',
+        fontWeight: '600',
         textAlign: 'right',
     },
-    startWorkoutBtn: {
-        flexDirection: 'row',
+    primaryBtn: {
         backgroundColor: BRAND_LIME,
-        height: 55,
+        height: 56,
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: BRAND_LIME,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 5,
     },
-    startWorkoutBtnText: {
-        color: BG_DARK,
-        fontSize: 16,
-        fontWeight: '800',
-        marginRight: 8,
-    },
-    arrowIcon: {
-        color: BG_DARK,
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-
-    // Empty State Card
-    emptyStateCard: {
-        backgroundColor: CARD_DARK,
-        borderRadius: 24,
-        padding: 30,
-        alignItems: 'center',
-        marginBottom: 35,
+    restBtn: {
+        backgroundColor: '#1C1C1E',
         borderWidth: 1,
         borderColor: BORDER_DARK,
-        borderStyle: 'dashed',
+        shadowOpacity: 0,
+        elevation: 0,
     },
-    emptyStateTitle: {
-        color: TEXT_WHITE,
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    emptyStateSub: {
-        color: TEXT_MUTED,
-        fontSize: 14,
-        textAlign: 'center',
-        marginBottom: 25,
-        lineHeight: 22,
-    },
-    createProgramBtn: {
-        backgroundColor: BRAND_PURPLE,
-        paddingHorizontal: 25,
-        paddingVertical: 15,
-        borderRadius: 30,
-    },
-    createProgramBtnText: {
-        color: TEXT_WHITE,
-        fontWeight: 'bold',
+    primaryBtnText: {
+        color: BG_DARK,
         fontSize: 16,
+        fontWeight: '900',
+        letterSpacing: 0.5,
     },
+    emptyTitle: { color: TEXT_WHITE, fontSize: 24, fontWeight: '900', marginBottom: 10, textAlign: 'center' },
+    mutedText: { color: TEXT_MUTED, fontSize: 14, textAlign: 'center', marginTop: 10, lineHeight: 22 },
 });

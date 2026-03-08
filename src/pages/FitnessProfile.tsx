@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../config/apiClient';
+import { useUser } from '../context/UserProvider';
 
 const GOAL_OPTIONS = [
     { title: "Gaining Muscle", icon: "💪" },
@@ -31,6 +32,9 @@ const FitnessProfile = ({ route, navigation }: any) => {
     const [currentGoal, setCurrentGoal] = useState('');
     const [isGoalMenuVisible, setIsGoalMenuVisible] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
+
+    const {fetchFitnessProfile} = useUser();
+
 
     useEffect(() => {
         if (route.params?.primaryGoal) {
@@ -52,7 +56,8 @@ const FitnessProfile = ({ route, navigation }: any) => {
 
             if (response.data) {
                 console.log(response);
-                navigation.navigate('WorkoutCreate');
+                await fetchFitnessProfile();
+                navigation.navigate('DashboardMain');
             }
         } catch (error) {
             console.error(error);
@@ -248,7 +253,7 @@ const FitnessProfile = ({ route, navigation }: any) => {
 
 export default FitnessProfile;
 
-// --- Colors ---
+
 const BG_DARK = '#151515';
 const CARD_DARK = '#1C1C1E';
 const BRAND_PURPLE = '#A084E8';

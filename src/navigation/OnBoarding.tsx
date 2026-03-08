@@ -12,8 +12,7 @@ const OnBoarding = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="StartPage" component={StartPage} />
-            <Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />
-
+             <Stack.Screen name="FitnessProfile" component={FitnessProfile} />
         </Stack.Navigator>
     )
 }

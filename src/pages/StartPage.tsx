@@ -57,9 +57,9 @@ const StartPage = ({ navigation }: any) => {
 export default StartPage;
 
 // --- Premium Dark Theme Colors ---
-const BG_DARK = '#101010'; // Slightly richer dark than plain #151515
+const BG_DARK = '#101010'; 
 const BRAND_LIME = '#D6FA6F'; 
-const BRAND_PURPLE = '#9D76F0'; // Match the reference image purple
+const BRAND_PURPLE = '#9D76F0'; 
 const TEXT_WHITE = '#FFFFFF';
 const TEXT_MUTED = '#A0A0A0';
 

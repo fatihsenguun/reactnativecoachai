@@ -74,8 +74,12 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
                 setProgramData(null); 
                 setTodaySession(null);
             }
-        } catch (error) {
-            console.error("Failed to fetch program:", error);
+        } catch (error:any) {
+           if (error.response && (error.response.status === 400 || error.response.status === 404)) {
+                console.log("No active program found for this user. Showing empty state.");
+            } else {
+                console.error("Failed to fetch program:", error.message);
+            }
             setProgramData(null);
             setTodaySession(null);
         } finally {

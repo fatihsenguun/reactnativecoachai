@@ -7,11 +7,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import MainTabs from './MainTabs'
 import OnBoarding from './OnBoarding'
 import { useWorkout } from '../context/WorkoutProvider'
+import { useUser } from '../context/UserProvider'
 
 const RootStack = () => {
 
     const Stack = createNativeStackNavigator();
     const { user, isLoading } = useAuth();
+    const { fetchFitnessProfile, fitnessProfile } = useUser();
  
 
     if (isLoading) {
@@ -26,7 +28,7 @@ const RootStack = () => {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {user?(
-                        user.onboardingCompleted ?
+                        fitnessProfile ?
                             (<Stack.Screen name="Main" component={MainTabs} />) :
                             (<Stack.Screen name='OnBoarding' component={OnBoarding} />)
                 ) : (

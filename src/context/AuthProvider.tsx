@@ -52,6 +52,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     accessToken: tokens.accessToken,
                     refreshToken: tokens.refreshToken
                 });
+                await getUser();
             }
         } catch (error) {
             console.log("Token error: ", error);

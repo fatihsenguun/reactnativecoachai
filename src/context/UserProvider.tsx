@@ -1,9 +1,10 @@
-import { createContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import api from "../config/apiClient";
 
 interface UserContextType {
       fitnessProfile: FitnessProfile | null;  
   fetchFitnessProfile: () => Promise<void>;
+  isLoading: boolean;
 }
 interface FitnessProfile {
     weightKg: number,
@@ -20,6 +21,10 @@ export const UserContext = createContext<UserContextType | null>(null);
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [fitnessProfile, setFitnessProfile] = useState<FitnessProfile | null>(null);
+
+       useEffect(() => {
+        fetchFitnessProfile();
+    }, []);
 
     const fetchFitnessProfile = async () => {
         setIsLoading(true);
@@ -41,8 +46,17 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
     return (
-        <UserContext.Provider value={{ fetchFitnessProfile, fitnessProfile}}>
+        <UserContext.Provider value={{ fetchFitnessProfile, fitnessProfile,isLoading}}>
             {children}
         </UserContext.Provider>
     );
+
+ 
 }
+export default UserProvider;
+
+export const useUser = () => {
+    const context = useContext(UserContext);
+    if (!context) throw new Error("useUser must be used within a UserProvider");
+    return context;
+};

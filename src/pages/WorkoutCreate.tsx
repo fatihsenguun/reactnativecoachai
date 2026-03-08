@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthProvider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../config/apiClient';
+import { useWorkout } from '../context/WorkoutProvider';
 
 // --- Maps exactly to your Java Enum ---
 const DAY_OPTIONS = [
@@ -34,15 +35,14 @@ const WorkoutCreate = ({ navigation }: any) => {
     const [equipmentAvailable, setEquipmentAvailable] = useState('');
     const [specificFocus, setSpecificFocus] = useState('');
     
-    // --- State for Day Selection ---
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [isDaysMenuVisible, setIsDaysMenuVisible] = useState(false);
     
-    // --- State for Loading Overlay ---
     const [isGenerating, setIsGenerating] = useState(false);
     
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const { getUser } = useAuth();
+    const {fetchCurrentProgram} = useWorkout();
 
     const filledFieldsCount = [daysPerWeek, equipmentAvailable, specificFocus]
         .filter(field => field.trim() !== '').length; 
@@ -70,6 +70,7 @@ const WorkoutCreate = ({ navigation }: any) => {
             if (response.data) {
                 console.log("Workout generated!", response.data);
                 getUser();
+                await fetchCurrentProgram();
                 navigation.goBack(); 
             }
         } catch (error) {
