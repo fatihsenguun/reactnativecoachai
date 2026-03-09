@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../config/apiClient";
+import { useAuth } from "./AuthProvider";
 
 interface UserContextType {
-      fitnessProfile: FitnessProfile | null;  
-  fetchFitnessProfile: () => Promise<void>;
-  isLoading: boolean;
+    fitnessProfile: FitnessProfile | null;
+    fetchFitnessProfile: () => Promise<void>;
+    isLoading: boolean;
 }
 interface FitnessProfile {
     weightKg: number,
@@ -21,10 +22,17 @@ export const UserContext = createContext<UserContextType | null>(null);
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [fitnessProfile, setFitnessProfile] = useState<FitnessProfile | null>(null);
+    const { user } = useAuth(); // Get user from AuthContext
 
-       useEffect(() => {
-        fetchFitnessProfile();
-    }, []);
+    useEffect(() => {
+        // Only fetch if we actually have a logged-in user
+        if (user) {
+            fetchFitnessProfile();
+        } else {
+            setFitnessProfile(null);
+            setIsLoading(false);
+        }
+    }, [user]);
 
     const fetchFitnessProfile = async () => {
         setIsLoading(true);
@@ -46,12 +54,12 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
     return (
-        <UserContext.Provider value={{ fetchFitnessProfile, fitnessProfile,isLoading}}>
+        <UserContext.Provider value={{ fetchFitnessProfile, fitnessProfile, isLoading }}>
             {children}
         </UserContext.Provider>
     );
 
- 
+
 }
 export default UserProvider;
 

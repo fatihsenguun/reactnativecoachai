@@ -47,7 +47,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             setIsLoading(true);
             const tokens = await getTokens();
-            if (tokens && tokens.accessToken) {
+if (tokens?.accessToken && tokens?.refreshToken) {
                 setCurTokens({
                     accessToken: tokens.accessToken,
                     refreshToken: tokens.refreshToken
@@ -88,6 +88,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 
     useEffect(() => {
+        
         isLoggedIn();
     }, []);
 

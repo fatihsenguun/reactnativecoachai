@@ -46,12 +46,12 @@ const ProgramBox = () => {
     // --- STATE 3: COMPLETED (Ultra Simple & Clickable) ---
     if (isCompleted) {
         return (
-            <TouchableOpacity
+            <TouchableOpacity 
                 style={styles.completedSimpleCard}
                 onPress={() => navigation.navigate('WorkoutDetails', { session: todaySession })}
                 activeOpacity={0.9}
             >
-                <Image style={styles.completedEmoji} source={require('../../assets/trophy.png')} />
+                <Image style={styles.completedEmoji} source={require('../../assets/trophy.png')}/>
 
                 <Text style={styles.completedSimpleTitle}>Today's Workout Completed</Text>
                 <View style={styles.percentPill}>
@@ -110,8 +110,8 @@ const ProgramBox = () => {
 
 export default ProgramBox;
 
-const BG_DARK = '#0A0A0A';
-const CARD_DARK = '#141415';
+const BG_DARK = '#0A0A0A'; 
+const CARD_DARK = '#141415'; 
 const BRAND_PURPLE = '#A084E8';
 const BRAND_LIME = '#D6FA6F';
 const TEXT_WHITE = '#FFFFFF';
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
     },
-
+    
     // --- Completed State Styles ---
     completedSimpleCard: {
         backgroundColor: '#D6FA6F10',
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
     },
     completedEmoji: {
 
-        width: 60,
-        height: 60,
-        marginBottom: 10
+width:60,
+height:60,
+marginBottom:10,
     },
     completedSimpleTitle: {
         color: TEXT_WHITE,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     planBadge: {
-        backgroundColor: '#A084E815',
+        backgroundColor: '#A084E815', 
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 8,

@@ -44,6 +44,9 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
     const [todaySession, setTodaySession] = useState<WorkoutSession | null>(null);
     const [stats, setStats] = useState({ progress: 0, daysLeft: 0 });
 
+
+    
+
     const fetchCurrentProgram = async () => {
         setIsLoading(true);
         try {

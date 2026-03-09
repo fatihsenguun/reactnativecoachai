@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -18,6 +18,8 @@ const Dashboard = ({ navigation }: any) => {
 
     const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     const currentDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+
+
 
     return (
         <SafeAreaView style={styles.safeArea}>
