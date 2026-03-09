@@ -11,6 +11,7 @@ import {
     Image,
     FlatList,
     Modal,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../config/apiClient';
@@ -28,6 +29,7 @@ const FitnessProfile = ({ route, navigation }: any) => {
     const [weightKg, setWeightKg] = useState('');
     const [heightCm, setHeightCm] = useState('');
     const [age, setAge] = useState('');
+    const [errors, setErrors]= useState<any>({});
     const [sportsHistory, setSportsHistory] = useState('');
     const [currentGoal, setCurrentGoal] = useState('');
     const [isGoalMenuVisible, setIsGoalMenuVisible] = useState(false);
@@ -36,13 +38,51 @@ const FitnessProfile = ({ route, navigation }: any) => {
     const {fetchFitnessProfile} = useUser();
 
 
+
     useEffect(() => {
         if (route.params?.primaryGoal) {
             setCurrentGoal(route.params.primaryGoal);
         }
     }, [route.params?.primaryGoal]);
 
+    const validateForm = () => {
+        let tempErrors: any = {};
+        const weight = parseFloat(weightKg);
+        const height = parseFloat(heightCm);
+        const ageNum = parseInt(age, 10);
+
+        // 1. Goal Validation
+        if (!currentGoal) tempErrors.currentGoal = "Please select a fitness goal.";
+
+        // 2. Weight Validation (Matches Backend: 30-300kg)
+        if (!weightKg) tempErrors.weightKg = "Weight is required.";
+        else if (isNaN(weight) || weight < 30 || weight > 300) 
+            tempErrors.weightKg = "Enter a valid weight (30-300kg).";
+
+        // 3. Height Validation (Matches Backend: 100-250cm)
+        if (!heightCm) tempErrors.heightCm = "Height is required.";
+        else if (isNaN(height) || height < 100 || height > 250) 
+            tempErrors.heightCm = "Enter a valid height (100-250cm).";
+
+        // 4. Age Validation (Matches Backend: 13-100)
+        if (!age) tempErrors.age = "Age is required.";
+        else if (isNaN(ageNum) || ageNum < 13 || ageNum > 100) 
+            tempErrors.age = "Age must be between 13 and 100.";
+
+        // 5. Sports History (Matches Backend: Not Blank)
+        if (!sportsHistory.trim()) tempErrors.sportsHistory = "Please describe your history.";
+
+        setErrors(tempErrors);
+        return Object.keys(tempErrors).length === 0;
+    };
+
     const handleSaveProfile = async () => {
+
+        if (!validateForm()) {
+            Alert.alert("Invalid Input", "Please check the highlighted fields.");
+            return;
+        }
+
         const payload = {
             weightKg: parseFloat(weightKg),
             heightCm: parseFloat(heightCm),
