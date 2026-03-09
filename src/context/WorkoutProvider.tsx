@@ -11,6 +11,7 @@ export interface Exercise {
 }
 
 export interface WorkoutSession {
+    id:number,
     dayNumber: number;
     name: string;
     smallTips: string;

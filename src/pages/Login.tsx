@@ -21,9 +21,20 @@ const Login = ({ navigation }: any) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const isValidEmail = (text: string) => {
+        const regex = /^\S+@\S+\.\S+$/;
+        return regex.test(text);
+    };
+
     const handleSignin = async () => {
-        if (!email || !password) {
-            Alert.alert("Error", "All fields are required");
+
+        if (!email.trim() || !password.trim()) {
+            Alert.alert("Error", "Please fill in all fields.");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            Alert.alert("Invalid Email", "Please enter a valid email address.");
             return;
         }
 
@@ -31,17 +42,26 @@ const Login = ({ navigation }: any) => {
             setLoading(true);
             const url = "http://localhost:8080/authenticate";
             const response = await axios.post(url, {
-                email: email,
+                email: email.trim(),
                 password: password
             });
 
-            if (response.data.data) {
+            // 2. Handle Structured Backend Response
+            if (response.data.result && response.data.data) {
                 await login(response.data.data);
             } else {
-                Alert.alert("Failed", "Check your credentials");
+
+                const serverMsg = response.data.errorMessage?.exception?.message;
+                Alert.alert("Sign In Failed", serverMsg || "Check your credentials");
             }
-        } catch (error) {
-            Alert.alert("Error", "Server connection failed");
+
+        } catch (error: any) {
+
+            if (error.response?.status === 429) {
+                Alert.alert("Too Many Requests", "You're moving too fast! Please wait a minute.");
+            } else {
+                Alert.alert("Connection Error", "The server is currently unreachable.");
+            }
         } finally {
             setLoading(false);
         }
@@ -54,12 +74,12 @@ const Login = ({ navigation }: any) => {
                 style={styles.container}
             >
                 <View style={styles.content}>
-                    <Image 
-                        style={styles.logo} 
-                        source={require("../assets/women.png")} 
-                        resizeMode='contain' 
+                    <Image
+                        style={styles.logo}
+                        source={require("../assets/women.png")}
+                        resizeMode='contain'
                     />
-                    
+
                     <Text style={styles.mainTitle}>Sign In</Text>
 
                     <View style={styles.inputWrapper}>
@@ -82,8 +102,8 @@ const Login = ({ navigation }: any) => {
                         />
                     </View>
 
-                    <TouchableOpacity 
-                        onPress={handleSignin} 
+                    <TouchableOpacity
+                        onPress={handleSignin}
                         style={styles.primaryButton}
                         disabled={loading}
                     >
@@ -112,7 +132,7 @@ export default Login;
 
 const styles = StyleSheet.create({
     safeArea: {
-        flex: 1, 
+        flex: 1,
         backgroundColor: '#000'
     },
     container: {
@@ -160,9 +180,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#D6FA6F',
-        shadowOffset: { 
-            width: 0, 
-            height: 4 
+        shadowOffset: {
+            width: 0,
+            height: 4
         },
         shadowOpacity: 0.2,
         shadowRadius: 8,

@@ -29,20 +29,31 @@ const WorkoutDetails = ({ route, navigation }: any) => {
         );
     }
 
+    const offset = new Date().getTimezoneOffset();
+    const localDate = new Date(new Date().getTime() - (offset * 60 * 1000));
+    const todayStr = localDate.toISOString().split('T')[0];
+    const isToday = session.scheduledDate === todayStr;
+
     const handleCompleteWorkout = async () => {
-        if (session.completed || isSubmitting) return;
+        if (session.completed || isSubmitting || !isToday) return;
 
         try {
             setIsSubmitting(true);
             await api.get(`/session/set_completed?id=${session.id}`);
             await fetchCurrentProgram();
-            console.log(`Workout Day ${session.dayNumber} Completed!`);
             navigation.goBack(); 
         } catch (error) {
             console.error("Error completing workout:", error);
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const getButtonText = () => {
+        if (isSubmitting) return "";
+        if (session.completed) return "WORKOUT COMPLETED 🏆";
+        if (!isToday) return `LOCKED UNTIL ${session.scheduledDate}`;
+        return "FINISH WORKOUT";
     };
 
     return (
@@ -53,7 +64,7 @@ const WorkoutDetails = ({ route, navigation }: any) => {
                     <Image source={require('../assets/left.png')} style={styles.backIcon} />
                 </TouchableOpacity>
                 <View style={styles.topBarCenter}>
-                    <Text style={styles.topBarText}>TODAY'S PLAN</Text>
+                    <Text style={styles.topBarText}>PLAN DETAILS</Text>
                 </View>
                 <View style={styles.topBarSpacer} /> 
             </View>
@@ -67,7 +78,9 @@ const WorkoutDetails = ({ route, navigation }: any) => {
                         <Text style={styles.dayBadgeText}>DAY {session.dayNumber}</Text>
                     </View>
                     <Text style={styles.heroTitle}>{session.name}</Text>
-                    <Text style={styles.heroSubtitle}>{session.exercises.length} Exercises • ~{session.exercises.length * 5} Min</Text>
+                    <Text style={styles.heroSubtitle}>
+                        {session.scheduledDate} • {session.exercises.length} Exercises
+                    </Text>
                 </View>
 
                 {session.smallTips ? (
@@ -143,20 +156,22 @@ const WorkoutDetails = ({ route, navigation }: any) => {
                 <TouchableOpacity 
                     style={[
                         styles.completeBtn,
-                        session.completed && styles.completeBtnDone
+                        session.completed && styles.completeBtnDone,
+                        (!isToday && !session.completed) && styles.completeBtnDisabled
                     ]} 
                     onPress={handleCompleteWorkout}
                     activeOpacity={0.9}
-                    disabled={session.completed || isSubmitting}
+                    disabled={session.completed || isSubmitting || !isToday}
                 >
                     {isSubmitting ? (
                         <ActivityIndicator color={BG_DARK} />
                     ) : (
                         <Text style={[
                             styles.completeBtnText,
-                            session.completed && { color: BRAND_LIME }
+                            session.completed && { color: BRAND_LIME },
+                            (!isToday && !session.completed) && { color: '#444' }
                         ]}>
-                            {session.completed ? "WORKOUT COMPLETED 🏆" : "FINISH WORKOUT"}
+                            {getButtonText()}
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -168,13 +183,13 @@ const WorkoutDetails = ({ route, navigation }: any) => {
 
 export default WorkoutDetails;
 
-const BG_DARK = '#0A0A0A'; 
-const CARD_DARK = '#141415'; 
+const BG_DARK = '#000'; 
+const CARD_DARK = '#111'; 
 const BRAND_PURPLE = '#A084E8';
 const BRAND_LIME = '#D6FA6F';
 const TEXT_WHITE = '#FFFFFF';
 const TEXT_MUTED = '#8A8A8E';
-const BORDER_DARK = '#242426';
+const BORDER_DARK = '#222';
 
 const styles = StyleSheet.create({
     safeArea: { 
@@ -208,8 +223,8 @@ const styles = StyleSheet.create({
     },
     topBarText: { 
         color: TEXT_MUTED, 
-        fontSize: 13, 
-        fontWeight: '700', 
+        fontSize: 11, 
+        fontWeight: '900', 
         letterSpacing: 2 
     },
     topBarSpacer: { 
@@ -255,12 +270,7 @@ const styles = StyleSheet.create({
         borderRadius: 20, 
         marginBottom: 35, 
         borderWidth: 1, 
-        borderColor: BORDER_DARK, 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 8 }, 
-        shadowOpacity: 0.2, 
-        shadowRadius: 15, 
-        elevation: 5 
+        borderColor: BORDER_DARK 
     },
     tipsHeader: { 
         flexDirection: 'row', 
@@ -276,7 +286,7 @@ const styles = StyleSheet.create({
         width: 36, 
         height: 36, 
         borderRadius: 12, 
-        backgroundColor: '#2A2A2D', 
+        backgroundColor: '#1A1A1A', 
         justifyContent: 'center', 
         alignItems: 'center', 
         marginRight: 12 
@@ -351,13 +361,15 @@ const styles = StyleSheet.create({
         gap: 8 
     },
     metricPill: { 
-        backgroundColor: '#242426', 
+        backgroundColor: '#000', 
         paddingHorizontal: 14, 
         paddingVertical: 10, 
         borderRadius: 12, 
         alignItems: 'center', 
         justifyContent: 'center', 
-        minWidth: 60 
+        minWidth: 60,
+        borderWidth: 1,
+        borderColor: BORDER_DARK
     },
     metricValue: { 
         color: TEXT_WHITE, 
@@ -372,7 +384,8 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5 
     },
     weightPill: { 
-        backgroundColor: '#A084E820' 
+        backgroundColor: '#A084E810',
+        borderColor: '#A084E830'
     },
     weightValue: { 
         color: BRAND_PURPLE, 
@@ -390,7 +403,7 @@ const styles = StyleSheet.create({
     restPill: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        backgroundColor: '#1C1C1E', 
+        backgroundColor: '#1A1A1A', 
         paddingHorizontal: 12, 
         paddingVertical: 8, 
         borderRadius: 12, 
@@ -421,26 +434,21 @@ const styles = StyleSheet.create({
         height: 60, 
         borderRadius: 20, 
         justifyContent: 'center', 
-        alignItems: 'center', 
-        shadowColor: BRAND_LIME, 
-        shadowOffset: { width: 0, height: 4 }, 
-        shadowOpacity: 0.3, 
-        shadowRadius: 12, 
-        elevation: 8 
+        alignItems: 'center' 
     },
     completeBtnDone: { 
         backgroundColor: '#D6FA6F15', 
         borderWidth: 1.5, 
-        borderColor: BRAND_LIME, 
-        shadowColor: BRAND_LIME,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 0 
+        borderColor: BRAND_LIME 
+    },
+    completeBtnDisabled: {
+        backgroundColor: '#111',
+        borderWidth: 1,
+        borderColor: '#222'
     },
     completeBtnText: { 
         color: BG_DARK, 
-        fontSize: 16, 
+        fontSize: 14, 
         fontWeight: '900', 
         letterSpacing: 1.5 
     }

@@ -6,6 +6,7 @@ import Profile from '../pages/Profile';
 import DashboardStack from './DashboardStack';
 import WorkoutCreate from '../pages/WorkoutCreate';
 import BottomTabs from './BottomTabs';
+import WorkoutDetails from '../pages/WorkoutDetails';
 
 const MainTabs = () => {
     const Stack = createNativeStackNavigator();
@@ -13,6 +14,7 @@ const MainTabs = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="BottomTabs" component={BottomTabs} />
             <Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />
+              <Stack.Screen name="WorkoutDetails" component={WorkoutDetails} />
         </Stack.Navigator>
     )
 }

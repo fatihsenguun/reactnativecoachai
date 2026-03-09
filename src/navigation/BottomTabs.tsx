@@ -3,6 +3,7 @@ import { Platform, StyleSheet, Text, View, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Profile from '../pages/Profile';
 import DashboardStack from './DashboardStack';
+import WorkoutPage from '../pages/WorkoutPage';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,14 +21,20 @@ const BottomTabs = () => {
                     if (route.name === 'DashboardMain') {
                         iconSource = require('../assets/home.png');
                         label = 'HOME';
+
+                    }
+                    else if (route.name === 'WorkoutPage') {
+                        iconSource = require('../assets/gym.png');
+                        label = 'WORKOUT';
                     } else if (route.name === 'Profile') {
                         iconSource = require('../assets/user.png');
                         label = 'PROFILE';
                     }
 
+
                     return (
                         <View style={styles.iconContainer}>
-                            <Image 
+                            <Image
                                 source={iconSource}
                                 style={[
                                     styles.iconImage,
@@ -46,7 +53,9 @@ const BottomTabs = () => {
             })}
         >
             <Tab.Screen name="DashboardMain" component={DashboardStack} />
+            <Tab.Screen name="WorkoutPage" component={WorkoutPage} />
             <Tab.Screen name="Profile" component={Profile} />
+
         </Tab.Navigator>
     );
 };
@@ -65,9 +74,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#242426',
         shadowColor: '#000',
-        shadowOffset: { 
-            width: 0, 
-            height: 10 
+        shadowOffset: {
+            width: 0,
+            height: 10
         },
         shadowOpacity: 0.3,
         shadowRadius: 20,
