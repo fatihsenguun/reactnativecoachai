@@ -65,31 +65,33 @@ if (tokens?.accessToken && tokens?.refreshToken) {
 
     const login = async (userData: User) => {
         await setTokens(userData.accessToken, userData.refreshToken);
-        try {
-            const response = await api.get("/user", {})
+     try {
+            // 3. Fetch user data
+            const response = await api.get("/user", {});
             const userProfile = response.data.data ? response.data.data : response.data;
-            const response1 = await api.get("/program/get", {})
             
+            // 4. Actually set the user (the program fetch is gone!)
             setUser(userProfile);
         } catch (error) {
-            console.error(error);
+            console.error("Failed to fetch user during login:", error);
         }
     };
 
     const logout = () => {
         setUser(null);
+        setCurTokens(null);
         clearTokens();
     };
-    const getUser = async () => {
+ const getUser = async () => {
         try {
-            const response = await api.get("/user", {})
+            const response = await api.get("/user", {});
             const userProfile = response.data.data ? response.data.data : response.data;
             setUser(userProfile);
         } catch (error) {
-            console.error(error);
+            console.error("Failed to fetch user:", error);
+            // If fetching the user fails (e.g., token expired), you might want to log them out here
         }
     }
-
 
     useEffect(() => {
         
