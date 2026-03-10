@@ -12,11 +12,11 @@ import { useUser } from '../context/UserProvider'
 const RootStack = () => {
 
     const Stack = createNativeStackNavigator();
-    const { user, isLoading } = useAuth();
-    const { fetchFitnessProfile, fitnessProfile } = useUser();
+   const { user, isLoading: authLoading } = useAuth();
+    const { fitnessProfile, isLoading: profileLoading } = useUser();
  
 
-    if (isLoading) {
+   if (authLoading || (user && profileLoading)) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#151515' }}>
                 <ActivityIndicator color="#d6fa6f" size="large" />

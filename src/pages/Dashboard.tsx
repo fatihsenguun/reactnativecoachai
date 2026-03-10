@@ -1,25 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
     View,
     ScrollView,
     TouchableOpacity,
-    Image
+    Image,
+    FlatList,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ProgramBox from '../components/dashboardComponents/ProgramBox';
 import { useAuth } from '../context/AuthProvider';
+import { useWorkout } from '../context/WorkoutProvider';
 
 const Dashboard = ({ navigation }: any) => {
     const { user } = useAuth();
+    const { fullSchedule, isLoading } = useWorkout();
     
+    // 1. Setup Date Strings
+    const todayStr = new Date().toISOString().split('T')[0];
     const firstName = user?.firstName || 'Fatih';
 
-    const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const currentDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    // 2. State & Refs
+    const [selectedDateStr, setSelectedDateStr] = useState(todayStr);
+    const flatListRef = useRef<FlatList>(null);
 
+    // 3. Effect: Auto-scroll to today's date when schedule loads
+    useEffect(() => {
+        if (fullSchedule.length > 0 && flatListRef.current) {
+            const todayIndex = fullSchedule.findIndex(item => item.date === todayStr);
 
+            if (todayIndex !== -1) {
+                // Short timeout to ensure the list is rendered before scrolling
+                setTimeout(() => {
+                    flatListRef.current?.scrollToIndex({
+                        index: todayIndex,
+                        animated: true,
+                        viewPosition: 0.5 // Centers the item in the viewport
+                    });
+                }, 600);
+            }
+        }
+    }, [fullSchedule]);
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#D6FA6F" />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -27,41 +60,79 @@ const Dashboard = ({ navigation }: any) => {
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Header Section */}
                 <View style={styles.header}>
                     <View>
                         <Text style={styles.greeting}>READY TO WORK?</Text>
                         <Text style={styles.name}>Hello, {firstName} 👋</Text>
                     </View>
+                    <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                 
+                    </TouchableOpacity>
                 </View>
 
-                <View style={styles.weeklyTracker}>
-                    {weekDays.map((day, index) => {
-                        const isToday = index === currentDayIndex;
-                        const isPast = index < currentDayIndex;
-                        return (
-                            <View key={index} style={styles.dayBubbleContainer}>
-                                <View style={[
-                                    styles.dayBubble,
-                                    isToday && styles.dayBubbleActive,
-                                    isPast && styles.dayBubblePast
-                                ]}>
-                                    <Text style={[
-                                        styles.dayText,
-                                        isToday && styles.dayTextActive,
-                                        isPast && styles.dayTextPast
+                {/* Linear Timeline Schedule */}
+                <Text style={styles.sectionTitle}>Your Schedule</Text>
+                <View style={styles.trackerWrapper}>
+                    <FlatList
+                        ref={flatListRef}
+                        horizontal
+                        data={fullSchedule}
+                        keyExtractor={(item) => item.date}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.flatListContent}
+                        // Important for stable auto-scrolling
+                        getItemLayout={(data, index) => (
+                            { length: 62, offset: 62 * index, index }
+                        )}
+                        renderItem={({ item }) => {
+                            const isSelected = item.date === selectedDateStr;
+                            const isToday = item.date === todayStr;
+                            const hasWorkout = !item.isRestDay;
+
+                            return (
+                                <TouchableOpacity 
+                                    onPress={() => setSelectedDateStr(item.date)}
+                                    style={styles.dayBubbleContainer}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[
+                                        styles.dayBubble,
+                                        isSelected && styles.dayBubbleActive,
+                                        isToday && !isSelected && styles.dayBubbleTodayBorder,
+                                        item.isRestDay && !isSelected && styles.dayBubbleRest
                                     ]}>
-                                        {day}
-                                    </Text>
-                                </View>
-                                {isToday && <View style={styles.todayDot} />}
-                            </View>
-                        );
-                    })}
+                                        <Text style={[
+                                            styles.dayText, 
+                                            isSelected && styles.dayTextActive
+                                        ]}>
+                                            {item.dayName.charAt(0)}
+                                        </Text>
+                                        <Text style={[
+                                            styles.dayNum, 
+                                            isSelected && styles.dayTextActive
+                                        ]}>
+                                            {item.dayNumber}
+                                        </Text>
+                                    </View>
+                                    
+                                    {/* Small indicator dot for workout days */}
+                                    {hasWorkout && (
+                                        <View style={[
+                                            styles.workoutDot, 
+                                            isSelected && { backgroundColor: '#FFF' }
+                                        ]} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        }}
+                    />
                 </View>
 
                 <Text style={styles.sectionTitle}>Your Active Plan</Text>
             
-                <ProgramBox /> 
+                {/* Syncs ProgramBox with the selected day in the tracker */}
+                <ProgramBox selectedDateStr={selectedDateStr} /> 
                 
                 <Text style={styles.sectionTitle}>Weekly Overview</Text>
                 
@@ -95,19 +166,24 @@ export default Dashboard;
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#0A0A0A'
+        backgroundColor: '#0A0A0A',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     scrollContainer: {
         flexGrow: 1,
         paddingHorizontal: 25,
         paddingTop: 20,
-        paddingBottom: 40
+        paddingBottom: 40,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 35
+        marginBottom: 35,
     },
     greeting: {
         fontSize: 12,
@@ -115,75 +191,87 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         textTransform: 'uppercase',
         letterSpacing: 2,
-        marginBottom: 8
+        marginBottom: 8,
     },
     name: {
         fontSize: 32,
         fontWeight: '900',
         color: '#FFFFFF',
-        letterSpacing: -1
+        letterSpacing: -1,
     },
-    weeklyTracker: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 40,
-        paddingHorizontal: 5
-    },
-    dayBubbleContainer: {
-        alignItems: 'center'
-    },
-    dayBubble: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        backgroundColor: '#141415',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#242426'
-    },
-    dayBubbleActive: {
-        backgroundColor: '#D6FA6F',
-        borderColor: '#D6FA6F',
-        shadowColor: '#D6FA6F',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6
-    },
-    dayBubblePast: {
-        backgroundColor: '#0A0A0A',
-        borderColor: '#1C1C1E'
-    },
-    dayText: {
-        color: '#8A8A8E',
-        fontSize: 15,
-        fontWeight: '700'
-    },
-    dayTextActive: {
-        color: '#0A0A0A',
-        fontWeight: '900'
-    },
-    dayTextPast: {
-        color: '#444446'
-    },
-    todayDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#D6FA6F',
-        marginTop: 8
+    settingsIcon: {
+        width: 26,
+        height: 26,
+        tintColor: '#FFF',
     },
     sectionTitle: {
         fontSize: 20,
         fontWeight: '900',
         color: '#FFFFFF',
         marginBottom: 20,
-        letterSpacing: -0.5
+        letterSpacing: -0.5,
     },
+
+    // --- Timeline Tracker Styles ---
+    trackerWrapper: {
+        marginBottom: 35,
+        marginLeft: -25, // Stretch to screen edges
+        marginRight: -25,
+    },
+    flatListContent: {
+        paddingHorizontal: 25,
+        gap: 12,
+    },
+    dayBubbleContainer: {
+        alignItems: 'center',
+    },
+    dayBubble: {
+        width: 50,
+        height: 65,
+        borderRadius: 16,
+        backgroundColor: '#141415',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#242426',
+    },
+    dayBubbleActive: {
+        backgroundColor: '#D6FA6F',
+        borderColor: '#D6FA6F',
+    },
+    dayBubbleTodayBorder: {
+        borderColor: '#D6FA6F',
+        borderWidth: 2,
+    },
+    dayBubbleRest: {
+        opacity: 0.5,
+    },
+    dayText: {
+        color: '#8A8A8E',
+        fontSize: 12,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    dayNum: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: '900',
+    },
+    dayTextActive: {
+        color: '#0A0A0A',
+    },
+    workoutDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: '#D6FA6F',
+        marginTop: 6,
+    },
+
+    // --- Stats Grid Styles ---
     statsGrid: {
         flexDirection: 'row',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
     },
     statCard: {
         width: '48%',
@@ -192,29 +280,24 @@ const styles = StyleSheet.create({
         padding: 20,
         borderWidth: 1,
         borderColor: '#242426',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 5
     },
     statIcon: {
         width: 32,
         height: 32,
         marginBottom: 16,
-        resizeMode: 'contain'
+        resizeMode: 'contain',
     },
     statValue: {
         fontSize: 26,
         fontWeight: '900',
         color: '#FFFFFF',
         marginBottom: 6,
-        letterSpacing: -0.5
+        letterSpacing: -0.5,
     },
     statLabel: {
         fontSize: 11,
         color: '#8A8A8E',
         fontWeight: '800',
-        letterSpacing: 1
-    }
+        letterSpacing: 1,
+    },
 });

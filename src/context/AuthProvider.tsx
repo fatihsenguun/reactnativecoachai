@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { setTokens, getTokens, clearTokens } from './tokenStorage';
 import axios from 'axios';
 import api from '../config/apiClient';
+import { useWorkout } from './WorkoutProvider';
 
 interface Tokens {
     accessToken: string;
@@ -43,6 +44,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
 
 
+
     const isLoggedIn = async () => {
         try {
             setIsLoading(true);
@@ -66,6 +68,8 @@ if (tokens?.accessToken && tokens?.refreshToken) {
         try {
             const response = await api.get("/user", {})
             const userProfile = response.data.data ? response.data.data : response.data;
+            const response1 = await api.get("/program/get", {})
+            
             setUser(userProfile);
         } catch (error) {
             console.error(error);

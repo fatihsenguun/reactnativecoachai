@@ -7,16 +7,24 @@ import DashboardStack from './DashboardStack';
 import WorkoutCreate from '../pages/WorkoutCreate';
 import BottomTabs from './BottomTabs';
 import WorkoutDetails from '../pages/WorkoutDetails';
+import { useAuth } from '../context/AuthProvider';
+import { useWorkout } from '../context/WorkoutProvider';
 
 const MainTabs = () => {
-    const Stack = createNativeStackNavigator();
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="BottomTabs" component={BottomTabs} />
-            <Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />
-              <Stack.Screen name="WorkoutDetails" component={WorkoutDetails} />
-        </Stack.Navigator>
-    )
+  const Stack = createNativeStackNavigator();
+  const { programData } = useWorkout();
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!programData ? (<Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />) : (
+        <>
+
+          <Stack.Screen name="BottomTabs" component={BottomTabs} />
+          <Stack.Screen name="WorkoutDetails" component={WorkoutDetails} />
+        </>
+      )}
+
+    </Stack.Navigator>
+  )
 }
 
 export default MainTabs
