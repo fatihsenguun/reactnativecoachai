@@ -13,9 +13,11 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthProvider';
 import axios from 'axios';
 
 const Register = ({ navigation }: any) => {
+    const { login } = useAuth();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -38,10 +40,11 @@ const Register = ({ navigation }: any) => {
                 password
             });
 
-            if (response.data.result) {
-                Alert.alert("Success", "Account created!", [
-                    { text: "Login", onPress: () => navigation.navigate('Login') }
-                ]);
+            if (response.data.result && response.data.data) {
+                await login(response.data.data);
+            } else {
+                const serverMsg = response.data.errorMessage?.exception?.message;
+                Alert.alert("Registration Failed", serverMsg || "An error occurred");
             }
         } catch (error) {
             Alert.alert("Error", "Registration failed");

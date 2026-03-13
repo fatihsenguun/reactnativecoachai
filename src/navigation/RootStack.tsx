@@ -12,7 +12,7 @@ import { useUser } from '../context/UserProvider'
 const RootStack = () => {
 
     const Stack = createNativeStackNavigator();
-   const { user, isLoading: authLoading } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const { fitnessProfile, isLoading: profileLoading } = useUser();
  
 

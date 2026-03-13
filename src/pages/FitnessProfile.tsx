@@ -97,7 +97,6 @@ const FitnessProfile = ({ route, navigation }: any) => {
             if (response.data) {
                 console.log(response);
                 await fetchFitnessProfile();
-              navigation.navigate('WorkoutCreate');
             }
         } catch (error) {
             console.error(error);
