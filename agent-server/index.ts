@@ -1,30 +1,51 @@
 import * as fs from "fs";
 import path from "path";
-import { auditAuthSystem } from "./agent.service";
+import { auditFullProject } from "./agent.service";
 
-async function runAudit() {
-  console.log("🚀 Starting Agentic Auth Audit...");
+/**
+ * Helper to recursively find all .ts and .tsx files in logic-heavy folders
+ */
+function getProjectContext(dir: string, fileList: string[] = []): string {
+  const files = fs.readdirSync(dir);
+  
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stats = fs.statSync(filePath);
 
-  const authFilePath = path.join(__dirname, "../src/context/AuthProvider.tsx");
+    if (stats.isDirectory()) {
+      // We only care about folders that hold logic
+      if (['context', 'navigation', 'pages', 'api'].includes(file)) {
+        getProjectContext(filePath, fileList);
+      }
+    } else if (file.match(/\.(ts|tsx)$/)) {
+      const content = fs.readFileSync(filePath, "utf8");
+      // Format each file so the AI knows where it is
+      fileList.push(`\nFILE_PATH: ${filePath}\nCONTENT:\n${content}\n---END_FILE---`);
+    }
+  });
+  
+  return fileList.join("\n");
+}
+
+async function runGlobalAudit() {
+  console.log("🔍 Scanning CoachAI Project Logic...");
+  
+  const srcPath = path.join(__dirname, "../src");
+  const fullProjectContext = getProjectContext(srcPath);
 
   try {
-    const currentCode = fs.readFileSync(authFilePath, "utf8");
-    console.log("📄 Reading AuthProvider.tsx...");
-
+    console.log("🤖 Agent is analyzing cross-file dependencies...");
     const startTime = Date.now();
-    const report = await auditAuthSystem(currentCode);
+    
+    const globalReport = await auditFullProject(fullProjectContext);
+    
     const duration = (Date.now() - startTime) / 1000;
-
-
-    const reportPath = path.join(__dirname, "auth_upgrade_report.md");
-    fs.writeFileSync(reportPath, report as string);
-
-    console.log(`\n✅ Audit Complete in ${duration}s!`);
-    console.log(`📂 Report saved to: ${reportPath}`);
-
+    fs.writeFileSync(path.join(__dirname, "FULL_SYSTEM_REPORT.md"), globalReport as string);
+    
+    console.log(`\n✅ Full Audit Complete in ${duration}s! Check FULL_SYSTEM_REPORT.md`);
   } catch (error) {
-    console.error("❌ Error during audit:", error);
+    console.error("❌ Global Audit Failed:", error);
   }
 }
 
-runAudit();
+runGlobalAudit();
