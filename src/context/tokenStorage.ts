@@ -2,28 +2,38 @@ import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = 'coach_ai_user_tokens';
 
+interface Tokens {
+    accessToken: string;
+    refreshToken: string;
+}
+
 export const setTokens = async (accessToken: string, refreshToken: string) => {
-
+    if (!accessToken || !refreshToken) {
+        console.error("Attempted to store empty tokens");
+        return;
+    }
     try {
-        const tokens: any = JSON.stringify({ accessToken, refreshToken })
+        const tokens = JSON.stringify({ accessToken, refreshToken });
         await SecureStore.setItemAsync(TOKEN_KEY, tokens);
-
     } catch (error) {
-        console.log(error);
+        console.error("Error saving tokens to secure store:", error);
     }
 };
 
-export const getTokens = async () => {
-
+export const getTokens = async (): Promise<Tokens | null> => {
     try {
         const credentials = await SecureStore.getItemAsync(TOKEN_KEY);
         if (credentials) {
-            return JSON.parse(credentials)
-            console.log(credentials);
+            try {
+                return JSON.parse(credentials) as Tokens;
+            } catch (error) {
+                console.error("Error parsing tokens from secure store:", error);
+                return null;
+            }
         }
         return null;
     } catch (error) {
-        console.log(error);
+        console.error("Error retrieving tokens from secure store:", error);
         return null;
     }
 }

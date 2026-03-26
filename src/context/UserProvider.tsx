@@ -25,10 +25,10 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth(); // Get user from AuthContext
 
     useEffect(() => {
-        // Only fetch if we actually have a logged-in user
         if (user) {
             fetchFitnessProfile();
         } else {
+            // If there's no user, clear the profile and stop loading.
             setFitnessProfile(null);
             setIsLoading(false);
         }
@@ -38,33 +38,34 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(true);
         try {
             const response = await api.get('/fitness_profile');
-
-            if (response.data && response.data.result && response.data.data) {
-                const profile = response.data.data;
+            // Assuming the profile is in response.data.data
+            const profile = response.data?.data;
+            if (profile) {
                 setFitnessProfile(profile);
-
             } else {
                 setFitnessProfile(null);
             }
         } catch (error) {
-            console.error("Failed to fetch profile:", error);
+            console.error("Failed to fetch fitness profile:", error);
             setFitnessProfile(null);
         } finally {
             setIsLoading(false);
         }
     };
+
     return (
         <UserContext.Provider value={{ fetchFitnessProfile, fitnessProfile, isLoading }}>
             {children}
         </UserContext.Provider>
     );
-
-
 }
+
 export default UserProvider;
 
 export const useUser = () => {
     const context = useContext(UserContext);
-    if (!context) throw new Error("useUser must be used within a UserProvider");
+    if (!context) {
+        throw new Error("useUser must be used within a UserProvider");
+    }
     return context;
 };

@@ -29,29 +29,29 @@ api.interceptors.response.use(
 
             try {
                 const tokens = await getTokens();
-                if (!tokens || !tokens.refreshToken) {
-                    throw new Error("Refresh Token Cannot Find")
+                if (!tokens?.refreshToken) {
+                    await clearTokens();
+                    throw new Error("Refresh token not found. User needs to re-authenticate.");
                 }
+
                 const refreshResponse = await axios.post('http://localhost:8080/refreshToken', {
                     refreshToken: tokens.refreshToken
-                })
-                console.log(refreshResponse);
+                });
 
-                const newAccessToken = refreshResponse.data.accessToken;
-                const newRefreshToken = refreshResponse.data.refreshToken || tokens.refreshToken;
+                const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data;
 
+                await setTokens(newAccessToken, newRefreshToken || tokens.refreshToken);
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                await setTokens(newAccessToken, newRefreshToken);
                 return api(originalRequest);
 
-
             } catch (refreshError) {
-                console.log("Session expired");
                 await clearTokens();
+                console.error("Session expired. Please log in again.", refreshError);
+                // Instead of just rejecting, you might want to navigate the user to the login screen.
+                // This would require access to the navigation container, which is not available here.
+                // The application should handle API errors and navigate accordingly.
                 return Promise.reject(refreshError);
-
             }
-
         }
         return Promise.reject(error)
     }

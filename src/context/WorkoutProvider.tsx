@@ -42,7 +42,7 @@ interface WorkoutContextType {
     isLoading: boolean;
     stats: { progress: number; daysLeft: number };
     fetchCurrentProgram: () => Promise<void>;
-   fullSchedule: TimelineDay[];
+    fullSchedule: TimelineDay[];
 }
 
 export const WorkoutContext = createContext<WorkoutContextType | null>(null);
@@ -62,20 +62,21 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
             // Clean up when logged out
             setProgramData(null);
             setFullSchedule([]);
+            setTodaySession(null);
+            setStats({ progress: 0, daysLeft: 0 });
         }
     }, [user]);
 
-    const generateFullSchedule = (programData: WorkoutProgram) => {
+    const generateFullSchedule = (programData: WorkoutProgram): TimelineDay[] => {
         const { startDate, endDate, sessions } = programData;
-        const schedule = [];
+        const schedule: TimelineDay[] = [];
 
         let current = new Date(startDate);
         const end = new Date(endDate);
 
         while (current <= end) {
             const dateStr = current.toISOString().split('T')[0];
-
-            const session = sessions.find((s: any) => s.scheduledDate === dateStr);
+            const session = sessions.find((s: WorkoutSession) => s.scheduledDate === dateStr);
 
             schedule.push({
                 date: dateStr,
@@ -94,13 +95,12 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const response = await api.get('/program/get');
 
-            if (response.data && response.data.result && response.data.data) {
-                const program = response.data.data;
+            if (response.data?.data) {
+                const program: WorkoutProgram = response.data.data;
                 setProgramData(program);
 
                 const generatedTimeline = generateFullSchedule(program);
                 setFullSchedule(generatedTimeline);
-                 console.log("full schedule :", generatedTimeline);
 
                 const offset = new Date().getTimezoneOffset();
                 const today = new Date(new Date().getTime() - (offset * 60 * 1000));
@@ -109,11 +109,9 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
                 const sessionForToday = program.sessions.find((s: WorkoutSession) => s.scheduledDate === todayStr);
                 setTodaySession(sessionForToday || null);
 
-
                 const completedSessions = program.sessions.filter((s: WorkoutSession) => s.completed).length;
                 const totalSessions = program.sessions.length;
                 const progressPct = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
-
 
                 const endDate = new Date(program.endDate);
                 const diffTime = endDate.getTime() - new Date().getTime();
@@ -124,11 +122,10 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
                 setProgramData(null);
                 setTodaySession(null);
                 setFullSchedule([]);
-                
             }
         } catch (error: any) {
             if (error.response && (error.response.status === 400 || error.response.status === 404)) {
-                console.log("No active program found for this user. Showing empty state.");
+                console.info("No active program found for this user.");
             } else {
                 console.error("Failed to fetch program:", error.message);
             }
@@ -139,8 +136,9 @@ const WorkoutProvider = ({ children }: { children: React.ReactNode }) => {
             setIsLoading(false);
         }
     };
+
     return (
-        <WorkoutContext.Provider value={{ fullSchedule,fetchCurrentProgram, programData, todaySession, isLoading, stats }}>
+        <WorkoutContext.Provider value={{ fullSchedule, fetchCurrentProgram, programData, todaySession, isLoading, stats }}>
             {children}
         </WorkoutContext.Provider>
     );

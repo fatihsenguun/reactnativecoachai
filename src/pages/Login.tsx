@@ -11,7 +11,7 @@ import {
     Image,
     ActivityIndicator
 } from 'react-native';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useAuth } from '../context/AuthProvider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,12 +22,11 @@ const Login = ({ navigation }: any) => {
     const [loading, setLoading] = useState(false);
 
     const isValidEmail = (text: string) => {
-        const regex = /^\S+@\S+\.\S+$/;
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         return regex.test(text);
     };
 
     const handleSignin = async () => {
-
         if (!email.trim() || !password.trim()) {
             Alert.alert("Error", "Please fill in all fields.");
             return;
@@ -38,30 +37,47 @@ const Login = ({ navigation }: any) => {
             return;
         }
 
+        setLoading(true);
         try {
-            setLoading(true);
             const url = "http://localhost:8080/authenticate";
             const response = await axios.post(url, {
                 email: email.trim(),
                 password: password
             });
 
-            // 2. Handle Structured Backend Response
-            if (response.data.result && response.data.data) {
+            if (response.data?.data) {
                 await login(response.data.data);
             } else {
-
-                const serverMsg = response.data.errorMessage?.exception?.message;
-                Alert.alert("Sign In Failed", serverMsg || "Check your credentials");
+                const serverMsg = response.data?.errorMessage || "An unknown error occurred.";
+                Alert.alert("Sign In Failed", serverMsg);
             }
 
-        } catch (error: any) {
+        } catch (error) {
+            const axiosError = error as AxiosError;
+            let title = "Error";
+            let message = "An unexpected error occurred. Please try again.";
 
-            if (error.response?.status === 429) {
-                Alert.alert("Too Many Requests", "You're moving too fast! Please wait a minute.");
-            } else {
-                Alert.alert("Connection Error", "The server is currently unreachable.");
+            if (axiosError.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                const status = axiosError.response.status;
+                if (status === 401 || status === 403) {
+                    title = "Authentication Failed";
+                    message = "Please check your email and password.";
+                } else if (status === 429) {
+                    title = "Too Many Requests";
+                    message = "You're trying to log in too frequently. Please wait a moment.";
+                } else if (status >= 500) {
+                    title = "Server Error";
+                    message = "There's an issue with our server. Please try again later.";
+                }
+            } else if (axiosError.request) {
+                // The request was made but no response was received
+                title = "Network Error";
+                message = "Could not connect to the server. Please check your internet connection.";
             }
+
+            Alert.alert(title, message);
         } finally {
             setLoading(false);
         }

@@ -1,22 +1,18 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { NavigationContainer } from '@react-navigation/native'
-import AuthStack from './AuthStack'
-import { useAuth } from '../context/AuthProvider'
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import MainTabs from './MainTabs'
-import OnBoarding from './OnBoarding'
-import { useWorkout } from '../context/WorkoutProvider'
-import { useUser } from '../context/UserProvider'
+import { ActivityIndicator, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import AuthStack from './AuthStack';
+import { useAuth } from '../context/AuthProvider';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import MainTabs from './MainTabs';
+import OnBoarding from './OnBoarding';
+
+const Stack = createNativeStackNavigator();
 
 const RootStack = () => {
+    const { user, isLoading } = useAuth();
 
-    const Stack = createNativeStackNavigator();
-    const { user, isLoading: authLoading } = useAuth();
-    const { fitnessProfile, isLoading: profileLoading } = useUser();
- 
-
-   if (authLoading || (user && profileLoading)) {
+    if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#151515' }}>
                 <ActivityIndicator color="#d6fa6f" size="large" />
@@ -27,19 +23,22 @@ const RootStack = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {user?.firstName?(
-                        fitnessProfile ?
-                            (<Stack.Screen name="Main" component={MainTabs} />) :
-                            (<Stack.Screen name='OnBoarding' component={OnBoarding} />)
+                {user ? (
+                    // User is authenticated, check if they have completed onboarding
+                    user.onboardingCompleted ? (
+                        // Onboarding complete, show main app
+                        <Stack.Screen name="Main" component={MainTabs} />
+                    ) : (
+                        // Onboarding not complete, show onboarding flow
+                        <Stack.Screen name='OnBoarding' component={OnBoarding} />
+                    )
                 ) : (
-
-                <Stack.Screen name="Auth" component={AuthStack} />
+                    // User is not authenticated, show login/register flow
+                    <Stack.Screen name="Auth" component={AuthStack} />
                 )}
             </Stack.Navigator>
         </NavigationContainer>
-    )
+    );
 }
 
-export default RootStack
-
-const styles = StyleSheet.create({})
+export default RootStack;

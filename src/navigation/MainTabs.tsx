@@ -1,32 +1,30 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Dashboard from '../pages/Dashboard';
-import Profile from '../pages/Profile';
-import DashboardStack from './DashboardStack';
 import WorkoutCreate from '../pages/WorkoutCreate';
 import BottomTabs from './BottomTabs';
 import WorkoutDetails from '../pages/WorkoutDetails';
 import { useAuth } from '../context/AuthProvider';
-import { useWorkout } from '../context/WorkoutProvider';
+import AuthStack from './AuthStack';
 
 const MainTabs = () => {
   const Stack = createNativeStackNavigator();
-  const { programData } = useWorkout();
+  const { user } = useAuth();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!programData ? (<Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />) : (
-        <>
-
-          <Stack.Screen name="BottomTabs" component={BottomTabs} />
-          <Stack.Screen name="WorkoutDetails" component={WorkoutDetails} />
-        </>
+      {user ? (
+        user.onboardingCompleted ? (
+          <>
+            <Stack.Screen name="BottomTabs" component={BottomTabs} />
+            <Stack.Screen name="WorkoutDetails" component={WorkoutDetails} />
+          </>
+        ) : (
+          <Stack.Screen name="WorkoutCreate" component={WorkoutCreate} />
+        )
+      ) : (
+        <Stack.Screen name="Auth" component={AuthStack} />
       )}
-
     </Stack.Navigator>
-  )
+  );
 }
 
-export default MainTabs
-
-const styles = StyleSheet.create({})
+export default MainTabs;

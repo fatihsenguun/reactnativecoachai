@@ -5,69 +5,119 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const model = new ChatGroq({
-  apiKey: process.env.GROQ_API_KEY,
-  model: "qwen/qwen3-32b",
-  temperature: 0.2,
-});
 
-
-export const auditFullProject = async (projectContext: string) => {
+export const auditFileChunk = async (fileName: string, content: string) => {
   const model = new ChatGroq({
     apiKey: process.env.GROQ_API_KEY,
-    model: "llama-3.3-70b-versatile", // Use the 70B model for complex multi-file reasoning
+
+    model: "llama-3.3-70b-versatile", 
     temperature: 0.1,
   });
 
   const prompt = `
-    ACT AS: A Principal Software Architect & Security Lead.
-    TASK: Perform a FULL SYSTEM AUDIT on the provided Expo project files.
+    ACT AS: A Senior Expo Security Auditor.
+    FILE: ${fileName}
     
-    PROJECT FILES:
-    ${projectContext}
+    TASK: Analyze this specific file for Auth, Navigation, or State management issues.
     
-    AUDIT CRITERIA:
-    1. AUTH FLOW: Does the Navigation logic properly respect the AuthProvider state?
-    2. TOKEN STORAGE: Is sensitive data (tokens/user info) leaked in any 'pages' via AsyncStorage?
-    3. PROVIDER HELL: Is the RootProvider wrapping components in the correct order?
-    4. NAVIGATION GUARD: Check if protected routes in 'navigation/' actually prevent access before rendering pages.
+    CRITERIA:
+    1. Insecure storage (AsyncStorage used for tokens?).
+    2. Missing navigation guards/protected routes logic.
+    3. Improper Context Provider usage.
     
-    OUTPUT: A comprehensive Markdown report including "Critical Architectural Risks" and "Modernization Roadmap".
+    CODE:
+    ${content}
+    
+    OUTPUT: List specific technical issues found in this file. If clean, reply: "No issues detected."
   `;
 
   const response = await model.invoke(prompt);
   return response.content;
 };
-/**
- * applyUpgrade
- * This function takes the Audit Report and the legacy code, 
- * then generates a modernized, secure version of the file.
- */
-export const applyUpgrade = async (currentCode: string, auditReport: string) => {
+
+
+export const applyUpgrade = async (currentCode: string, auditFindings: string) => {
   const model = new ChatGroq({
     apiKey: process.env.GROQ_API_KEY,
     model: "llama-3.3-70b-versatile",
-    temperature: 0, // 0 ensures deterministic, non-creative code generation
+    temperature: 0, 
   });
 
   const prompt = `
-    ACT AS: A Lead Software Architect & Security Expert.
-    TASK: Refactor the provided AuthProvider and other pages code based on the Audit Report findings.
+    ACT AS: A Lead Software Architect.
+    TASK: Refactor the code based on the aggregated audit findings.
     
-    GUIDELINES:
-    1. Resolve all security vulnerabilities mentioned in the report.
-    2. Implement 2026 Expo standards: Use 'expo-secure-store' instead of AsyncStorage.
-    3. Shift logic to 'Expo API Routes' architecture where applicable.
-    4. Ensure full TypeScript type-safety (Interfaces, Types).
-    5. Maintain the existing context naming conventions so the rest of the app doesn't break.
-    
-    AUDIT REPORT:
-    ${auditReport}
+    AUDIT FINDINGS:
+    ${auditFindings}
     
     CURRENT CODE:
     ${currentCode}
     
-    OUTPUT: Return ONLY the updated TypeScript code. Do not include any conversational text or markdown blocks.
+    GUIDELINES:
+    1. Use 'expo-secure-store' for all token operations.
+    2. Move auth logic to 'Expo API Routes' (Server-side).
+    3. Ensure strict TypeScript typing.
+    
+    OUTPUT: Return ONLY the refactored code. No conversational text.
+  `;
+
+  const response = await model.invoke(prompt);
+  return response.content;
+};
+
+/**
+ * auditUIPage
+ * Specialized agent for auditing React Native screens/pages.
+ */
+export const auditUIPage = async (fileName: string, content: string) => {
+  const model = new ChatGroq({
+    apiKey: process.env.GROQ_API_KEY,
+    model: "qwen/qwen3-32b",
+    temperature: 0.1,
+  });
+
+  const prompt = `
+    ACT AS: A Senior React Native & UX Engineer.
+    FILE: ${fileName}
+    
+    TASK: Audit this UI Screen for CoachAI.
+    
+    UI-SPECIFIC CRITERIA:
+    1. FORM SECURITY: Are inputs (Login/Register) validated using Zod or similar? Is password visibility handled?
+    2. DATA LEAKAGE: Is the UI displaying sensitive user info before 'isLoading' is false?
+    3. NAVIGATION LOGIC: Does this page redirect correctly if the user is unauthorized?
+    4. PROP DRILLING: Is the page fetching data it shouldn't, or passing too many props?
+    
+    CODE:
+    ${content}
+    
+    OUTPUT: Provide a concise list of UI/Logic fixes. If the page is clean, say "Optimal".
+  `;
+
+  const response = await model.invoke(prompt);
+  return response.content;
+};
+export const auditFullProject = async (projectMap: string) => {
+  const model = new ChatGroq({
+    apiKey: process.env.GROQ_API_KEY,
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+    temperature: 0.1,
+  });
+
+  const prompt = `
+    ACT AS: Principal Software Architect.
+    TASK: CoachAI projesinin tüm Auth ve Navigation sistemini denetle.
+    
+    PROJECT DATA:
+    ${projectMap}
+    
+    ANALİZ KRİTERLERİ:
+    1. THE 2-SECOND FLICKER: Neden uygulama ilk açılışta yanlış sayfayı gösteriyor? 
+    2. STATE HYDRATION: SecureStore'dan veri okunurken Navigation ağacı nasıl kilitlenmeli?
+    3. PROVIDER CONSISTENCY: AuthProvider ve UserProvider arasındaki veri akışı senkron mu?
+    4. NAVIGATION GUARDS: Layout seviyesinde eksik olan korumalar neler?
+
+    OUTPUT: Markdown formatında, "Kritik Mimari Riskler" ve "Çözüm Adımları" içeren bir rapor sun.
   `;
 
   const response = await model.invoke(prompt);

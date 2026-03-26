@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthProvider';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const Register = ({ navigation }: any) => {
     const { login } = useAuth();
@@ -24,30 +24,68 @@ const Register = ({ navigation }: any) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const isValidEmail = (text: string) => {
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return regex.test(text);
+    };
+
     const handleRegister = async () => {
-        if (!firstName || !lastName || !email || !password) {
-            Alert.alert("Error", "All fields are required");
+        if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
+            Alert.alert("Validation Error", "All fields are required.");
             return;
         }
 
+        if (!isValidEmail(email)) {
+            Alert.alert("Validation Error", "Please enter a valid email address.");
+            return;
+        }
+
+        if (password.length < 6) {
+            Alert.alert("Validation Error", "Password must be at least 6 characters long.");
+            return;
+        }
+
+        setLoading(true);
         try {
-            setLoading(true);
             const url = "http://localhost:8080/register";
             const response = await axios.post(url, {
-                firstName,
-                lastName,
-                email,
-                password
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                email: email.trim(),
+                password,
             });
 
-            if (response.data.result && response.data.data) {
+            if (response.data?.data) {
                 await login(response.data.data);
             } else {
-                const serverMsg = response.data.errorMessage?.exception?.message;
-                Alert.alert("Registration Failed", serverMsg || "An error occurred");
+                const serverMsg = response.data?.errorMessage || "An unknown error occurred during registration.";
+                Alert.alert("Registration Failed", serverMsg);
             }
         } catch (error) {
-            Alert.alert("Error", "Registration failed");
+            const axiosError = error as AxiosError<any>;
+            let title = "Registration Error";
+            let message = "An unexpected error occurred. Please try again.";
+
+            if (axiosError.response) {
+                const status = axiosError.response.status;
+                const serverMsg = axiosError.response.data?.errorMessage;
+
+                if (status === 409) {
+                    title = "Registration Failed";
+                    message = serverMsg || "An account with this email already exists.";
+                } else if (status === 400) {
+                    title = "Invalid Data";
+                    message = serverMsg || "Please check the information you provided.";
+                } else if (status >= 500) {
+                    title = "Server Error";
+                    message = "There's an issue with our server. Please try again later.";
+                }
+            } else if (axiosError.request) {
+                title = "Network Error";
+                message = "Could not connect to the server. Please check your internet connection.";
+            }
+
+            Alert.alert(title, message);
         } finally {
             setLoading(false);
         }

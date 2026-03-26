@@ -14,8 +14,18 @@ import {
     Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import api from '../config/apiClient';
 import { useUser } from '../context/UserProvider';
+
+// It's a good practice to define your stack param list in a central place
+// For this example, we define it here.
+type RootStackParamList = {
+    FitnessProfile: { primaryGoal?: string };
+    // ... other screens
+};
+
+type Props = NativeStackScreenProps<RootStackParamList, 'FitnessProfile'>;
 
 const GOAL_OPTIONS = [
     { title: "Gaining Muscle", icon: "💪" },
@@ -25,19 +35,25 @@ const GOAL_OPTIONS = [
     { title: "Flexibility & Mobility", icon: "🤸‍♂️" }
 ];
 
-const FitnessProfile = ({ route, navigation }: any) => {
+interface FormErrors {
+    weightKg?: string;
+    heightCm?: string;
+    age?: string;
+    sportsHistory?: string;
+    currentGoal?: string;
+}
+
+const FitnessProfile = ({ route, navigation }: Props) => {
     const [weightKg, setWeightKg] = useState('');
     const [heightCm, setHeightCm] = useState('');
     const [age, setAge] = useState('');
-    const [errors, setErrors]= useState<any>({});
+    const [errors, setErrors] = useState<FormErrors>({});
     const [sportsHistory, setSportsHistory] = useState('');
     const [currentGoal, setCurrentGoal] = useState('');
     const [isGoalMenuVisible, setIsGoalMenuVisible] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
-    const {fetchFitnessProfile} = useUser();
-
-
+    const { fetchFitnessProfile } = useUser();
 
     useEffect(() => {
         if (route.params?.primaryGoal) {
@@ -46,30 +62,18 @@ const FitnessProfile = ({ route, navigation }: any) => {
     }, [route.params?.primaryGoal]);
 
     const validateForm = () => {
-        let tempErrors: any = {};
+        let tempErrors: FormErrors = {};
         const weight = parseFloat(weightKg);
         const height = parseFloat(heightCm);
         const ageNum = parseInt(age, 10);
 
-        // 1. Goal Validation
         if (!currentGoal) tempErrors.currentGoal = "Please select a fitness goal.";
-
-        // 2. Weight Validation (Matches Backend: 30-300kg)
         if (!weightKg) tempErrors.weightKg = "Weight is required.";
-        else if (isNaN(weight) || weight < 30 || weight > 300) 
-            tempErrors.weightKg = "Enter a valid weight (30-300kg).";
-
-        // 3. Height Validation (Matches Backend: 100-250cm)
+        else if (isNaN(weight) || weight < 30 || weight > 300) tempErrors.weightKg = "Enter a valid weight (30-300kg).";
         if (!heightCm) tempErrors.heightCm = "Height is required.";
-        else if (isNaN(height) || height < 100 || height > 250) 
-            tempErrors.heightCm = "Enter a valid height (100-250cm).";
-
-        // 4. Age Validation (Matches Backend: 13-100)
+        else if (isNaN(height) || height < 100 || height > 250) tempErrors.heightCm = "Enter a valid height (100-250cm).";
         if (!age) tempErrors.age = "Age is required.";
-        else if (isNaN(ageNum) || ageNum < 13 || ageNum > 100) 
-            tempErrors.age = "Age must be between 13 and 100.";
-
-        // 5. Sports History (Matches Backend: Not Blank)
+        else if (isNaN(ageNum) || ageNum < 13 || ageNum > 100) tempErrors.age = "Age must be between 13 and 100.";
         if (!sportsHistory.trim()) tempErrors.sportsHistory = "Please describe your history.";
 
         setErrors(tempErrors);
@@ -77,9 +81,8 @@ const FitnessProfile = ({ route, navigation }: any) => {
     };
 
     const handleSaveProfile = async () => {
-
         if (!validateForm()) {
-            Alert.alert("Invalid Input", "Please check the highlighted fields.");
+            Alert.alert("Invalid Input", "Please correct the errors before saving.");
             return;
         }
 
@@ -87,22 +90,21 @@ const FitnessProfile = ({ route, navigation }: any) => {
             weightKg: parseFloat(weightKg),
             heightCm: parseFloat(heightCm),
             age: parseInt(age, 10),
-            sportsHistory: sportsHistory,
+            sportsHistory: sportsHistory.trim(),
             currentGoal: currentGoal
         };
 
         try {
             const response = await api.post('/fitness_profile/save', payload);
-
             if (response.data) {
-                console.log(response);
+                Alert.alert("Success", "Your profile has been saved!");
                 await fetchFitnessProfile();
+                // navigation.goBack(); or navigate to the main dashboard
             }
         } catch (error) {
-            console.error(error);
+            console.error("Failed to save profile:", error);
+            Alert.alert("Save Failed", "An error occurred while saving your profile. Please try again.");
         }
-
-        console.log("Profile Data ready for API:", payload);
     };
 
     const getInputStyle = (fieldName: string) => {
@@ -135,32 +137,31 @@ const FitnessProfile = ({ route, navigation }: any) => {
                     </Text>
 
                     <View style={styles.form}>
-                        {/* Goal Input - Triggers the Bottom Sheet */}
+                        {/* Goal Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Current Goal</Text>
                             <TouchableOpacity
                                 style={[
                                     styles.input,
                                     styles.dropdownTrigger,
-                                    isGoalMenuVisible && styles.inputFocused
+                                    isGoalMenuVisible && styles.inputFocused,
+                                    errors.currentGoal ? styles.inputError : {}
                                 ]}
                                 onPress={() => setIsGoalMenuVisible(true)}
                                 activeOpacity={0.8}
                             >
-                                <Text style={[
-                                    styles.dropdownText,
-                                    !currentGoal && { color: PLACEHOLDER_COLOR }
-                                ]}>
-                                    {currentGoal ? currentGoal : "Select your goal"}
+                                <Text style={[styles.dropdownText, !currentGoal && { color: PLACEHOLDER_COLOR }]}>
+                                    {currentGoal || "Select your goal"}
                                 </Text>
                                 <Text style={styles.dropdownArrow}>▼</Text>
                             </TouchableOpacity>
                         </View>
-                        {/* Weight Input */}
+
+                        {/* Other inputs... */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Weight (kg)</Text>
                             <TextInput
-                                style={getInputStyle('weightKg')}
+                                style={[getInputStyle('weightKg'), errors.weightKg ? styles.inputError : {}]}
                                 placeholder="e.g. 80"
                                 placeholderTextColor={PLACEHOLDER_COLOR}
                                 value={weightKg}
@@ -171,11 +172,10 @@ const FitnessProfile = ({ route, navigation }: any) => {
                             />
                         </View>
 
-                        {/* Height Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Height (cm)</Text>
                             <TextInput
-                                style={getInputStyle('heightCm')}
+                                style={[getInputStyle('heightCm'), errors.heightCm ? styles.inputError : {}]}
                                 placeholder="e.g. 180"
                                 placeholderTextColor={PLACEHOLDER_COLOR}
                                 value={heightCm}
@@ -186,11 +186,10 @@ const FitnessProfile = ({ route, navigation }: any) => {
                             />
                         </View>
 
-                        {/* Age Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Age</Text>
                             <TextInput
-                                style={getInputStyle('age')}
+                                style={[getInputStyle('age'), errors.age ? styles.inputError : {}]}
                                 placeholder="e.g. 22"
                                 placeholderTextColor={PLACEHOLDER_COLOR}
                                 value={age}
@@ -201,11 +200,10 @@ const FitnessProfile = ({ route, navigation }: any) => {
                             />
                         </View>
 
-                        {/* Sports History Input */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Sports History (years)</Text>
                             <TextInput
-                                style={getInputStyle('sportsHistory')}
+                                style={[getInputStyle('sportsHistory'), errors.sportsHistory ? styles.inputError : {}]}
                                 placeholder="e.g. 4"
                                 placeholderTextColor={PLACEHOLDER_COLOR}
                                 value={sportsHistory}
@@ -215,11 +213,10 @@ const FitnessProfile = ({ route, navigation }: any) => {
                                 onBlur={() => setFocusedField(null)}
                             />
                         </View>
-
                     </View>
                 </ScrollView>
 
-                {/*  PREMIUM BOTTOM SHEET MODAL */}
+                {/* Modal remains the same */}
                 <Modal
                     visible={isGoalMenuVisible}
                     transparent={true}
@@ -227,19 +224,15 @@ const FitnessProfile = ({ route, navigation }: any) => {
                     onRequestClose={() => setIsGoalMenuVisible(false)}
                 >
                     <View style={styles.modalOverlay}>
-
                         <TouchableOpacity
                             style={styles.modalDismissArea}
                             activeOpacity={1}
                             onPress={() => setIsGoalMenuVisible(false)}
                         />
-
                         <View style={styles.modalContent}>
                             <View style={styles.modalDragIndicator} />
-
                             <Text style={styles.modalTitle}>Select Your Goal</Text>
                             <Text style={styles.modalSubtitle}>What are you trying to achieve?</Text>
-
                             <FlatList
                                 data={GOAL_OPTIONS}
                                 keyExtractor={(item) => item.title}
@@ -247,10 +240,7 @@ const FitnessProfile = ({ route, navigation }: any) => {
                                 bounces={false}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        style={[
-                                            styles.goalCard,
-                                            currentGoal === item.title && styles.goalCardSelected
-                                        ]}
+                                        style={[styles.goalCard, currentGoal === item.title && styles.goalCardSelected]}
                                         activeOpacity={0.7}
                                         onPress={() => {
                                             setCurrentGoal(item.title);
@@ -258,10 +248,7 @@ const FitnessProfile = ({ route, navigation }: any) => {
                                         }}
                                     >
                                         <Text style={styles.goalIcon}>{item.icon}</Text>
-                                        <Text style={[
-                                            styles.goalCardText,
-                                            currentGoal === item.title && styles.goalCardTextSelected
-                                        ]}>
+                                        <Text style={[styles.goalCardText, currentGoal === item.title && styles.goalCardTextSelected]}>
                                             {item.title}
                                         </Text>
                                     </TouchableOpacity>
@@ -271,7 +258,6 @@ const FitnessProfile = ({ route, navigation }: any) => {
                     </View>
                 </Modal>
 
-                {/* Bottom Navigation Area */}
                 <View style={styles.bottomNav}>
                     <TouchableOpacity
                         style={styles.backButton}
@@ -279,19 +265,16 @@ const FitnessProfile = ({ route, navigation }: any) => {
                     >
                         <Image style={styles.left} source={require('../assets/left.png')} />
                     </TouchableOpacity>
-
                     <TouchableOpacity onPress={handleSaveProfile} style={styles.primaryButton}>
                         <Text style={styles.primaryButtonText}>Save</Text>
                     </TouchableOpacity>
                 </View>
-
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
 
 export default FitnessProfile;
-
 
 const BG_DARK = '#151515';
 const CARD_DARK = '#1C1C1E';
@@ -301,25 +284,14 @@ const TEXT_WHITE = '#FFFFFF';
 const TEXT_MUTED = '#8E8E93';
 const BORDER_DARK = '#2C2C2E';
 const PLACEHOLDER_COLOR = '#666666';
+const ERROR_RED = '#FF453A';
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: BG_DARK },
-    container: {
-        flex: 1,
-        backgroundColor: BG_DARK
-    },
-    header: {
-        paddingHorizontal: 25,
-        paddingTop: 20,
-        paddingBottom: 10
-    },
-    progressBarBackground: {
-        height: 6,
-        backgroundColor: CARD_DARK,
-        borderRadius: 3,
-        width: '100%'
-    },
-    progressBarFill: { height: 6, backgroundColor: BRAND_PURPLE, borderRadius: 3, width: '30%' }, // Give it a width so it shows progress!
+    container: { flex: 1, backgroundColor: BG_DARK },
+    header: { paddingHorizontal: 25, paddingTop: 20, paddingBottom: 10 },
+    progressBarBackground: { height: 6, backgroundColor: CARD_DARK, borderRadius: 3, width: '100%' },
+    progressBarFill: { height: 6, backgroundColor: BRAND_PURPLE, borderRadius: 3, width: '30%' },
     scrollContainer: { flexGrow: 1, paddingHorizontal: 25, paddingBottom: 40, paddingTop: 10 },
     left: { width: 30, height: 30, tintColor: TEXT_WHITE },
     title: { fontSize: 28, fontWeight: '800', color: TEXT_WHITE, marginBottom: 12, letterSpacing: -0.5 },
@@ -332,85 +304,32 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15, color: TEXT_WHITE, fontSize: 16, borderWidth: 1.5, borderColor: BORDER_DARK,
     },
     inputFocused: { borderColor: BRAND_PURPLE, backgroundColor: '#242038' },
-    dropdownTrigger: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-    },
-    dropdownText: {
-        color: TEXT_WHITE,
-        fontSize: 16
-    },
-    dropdownArrow: {
-        color: TEXT_MUTED,
-        fontSize: 12
-    },
-
-
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'flex-end',
-    },
-    modalDismissArea: {
-        flex: 1,
-    },
+    inputError: { borderColor: ERROR_RED },
+    dropdownTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    dropdownText: { color: TEXT_WHITE, fontSize: 16 },
+    dropdownArrow: { color: TEXT_MUTED, fontSize: 12 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalDismissArea: { flex: 1 },
     modalContent: {
-        backgroundColor: CARD_DARK,
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        paddingHorizontal: 25,
-        paddingTop: 15,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 25,
+        backgroundColor: CARD_DARK, borderTopLeftRadius: 30, borderTopRightRadius: 30,
+        paddingHorizontal: 25, paddingTop: 15, paddingBottom: Platform.OS === 'ios' ? 40 : 25,
         maxHeight: '80%',
     },
     modalDragIndicator: {
-        width: 40,
-        height: 5,
-        backgroundColor: BORDER_DARK,
-        borderRadius: 3,
-        alignSelf: 'center',
-        marginBottom: 20,
+        width: 40, height: 5, backgroundColor: BORDER_DARK,
+        borderRadius: 3, alignSelf: 'center', marginBottom: 20,
     },
-    modalTitle: {
-        color: TEXT_WHITE,
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    modalSubtitle: {
-        fontSize: 14,
-        color: TEXT_MUTED,
-        marginBottom: 25,
-    },
+    modalTitle: { color: TEXT_WHITE, fontSize: 22, fontWeight: 'bold', marginBottom: 5 },
+    modalSubtitle: { fontSize: 14, color: TEXT_MUTED, marginBottom: 25 },
     goalCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: BG_DARK,
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 12,
-        borderWidth: 1.5,
-        borderColor: BORDER_DARK,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: BG_DARK,
+        padding: 16, borderRadius: 16, marginBottom: 12,
+        borderWidth: 1.5, borderColor: BORDER_DARK,
     },
-    goalCardSelected: {
-        borderColor: BRAND_LIME,
-        backgroundColor: '#2A2D1C',
-    },
-    goalIcon: {
-        fontSize: 24,
-        marginRight: 15,
-    },
-    goalCardText: {
-        color: TEXT_WHITE,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    goalCardTextSelected: {
-        color: BRAND_LIME,
-    },
-
-
+    goalCardSelected: { borderColor: BRAND_LIME, backgroundColor: '#2A2D1C' },
+    goalIcon: { fontSize: 24, marginRight: 15 },
+    goalCardText: { color: TEXT_WHITE, fontSize: 16, fontWeight: '600' },
+    goalCardTextSelected: { color: BRAND_LIME },
     bottomNav: {
         flexDirection: 'row', paddingHorizontal: 25, paddingVertical: 15,
         paddingBottom: Platform.OS === 'ios' ? 10 : 25, backgroundColor: BG_DARK,

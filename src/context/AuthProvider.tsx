@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { setTokens, getTokens, clearTokens } from './tokenStorage';
-import axios from 'axios';
 import api from '../config/apiClient';
-import { useWorkout } from './WorkoutProvider';
 
 interface Tokens {
     accessToken: string;
@@ -17,15 +15,6 @@ interface User {
     role: string,
     onboardingCompleted: boolean
 }
-interface FitnessProfile {
-    weightKg: number;
-    heightCm: number;
-    age: number,
-    sportsHistory: string,
-    currentGoal: string,
-
-}
-
 
 interface AuthContextType {
     user: User | null;
@@ -33,7 +22,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (userData: User) => Promise<void>;
     logout: () => void;
-    getUser: () => void;
+    getUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -43,58 +32,52 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [curTokens, setCurTokens] = useState<Tokens | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const logout = () => {
+        setUser(null);
+        setCurTokens(null);
+        clearTokens();
+    };
 
+    const getUser = async () => {
+        try {
+            const response = await api.get("/user");
+            const userProfile = response.data.data || response.data;
+            setUser(userProfile);
+        } catch (error) {
+            console.error("Failed to fetch user:", error);
+            // If fetching the user fails, the token is likely invalid, so log out.
+            await logout();
+        }
+    }
 
     const isLoggedIn = async () => {
         try {
-            setIsLoading(true);
             const tokens = await getTokens();
-if (tokens?.accessToken && tokens?.refreshToken) {
-                setCurTokens({
-                    accessToken: tokens.accessToken,
-                    refreshToken: tokens.refreshToken
-                });
+            if (tokens?.accessToken && tokens?.refreshToken) {
+                setCurTokens(tokens);
                 await getUser();
             }
         } catch (error) {
-            console.log("Token error: ", error);
+            console.error("Error during initial login check:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
     const login = async (userData: User) => {
+        setIsLoading(true);
+        if (!userData || !userData.accessToken || !userData.refreshToken) {
+            console.error("Login failed: User data or tokens are missing.");
+            setIsLoading(false);
+            return;
+        }
         await setTokens(userData.accessToken, userData.refreshToken);
-     try {
-            // 3. Fetch user data
-            const response = await api.get("/user", {});
-            const userProfile = response.data.data ? response.data.data : response.data;
-            
-            // 4. Actually set the user (the program fetch is gone!)
-            setUser(userProfile);
-        } catch (error) {
-            console.error("Failed to fetch user during login:", error);
-        }
+        setCurTokens({ accessToken: userData.accessToken, refreshToken: userData.refreshToken });
+        await getUser();
+        setIsLoading(false);
     };
-
-    const logout = () => {
-        setUser(null);
-        setCurTokens(null);
-        clearTokens();
-    };
- const getUser = async () => {
-        try {
-            const response = await api.get("/user", {});
-            const userProfile = response.data.data ? response.data.data : response.data;
-            setUser(userProfile);
-        } catch (error) {
-            console.error("Failed to fetch user:", error);
-            // If fetching the user fails (e.g., token expired), you might want to log them out here
-        }
-    }
 
     useEffect(() => {
-        
         isLoggedIn();
     }, []);
 
@@ -107,9 +90,10 @@ if (tokens?.accessToken && tokens?.refreshToken) {
 
 export default AuthProvider;
 
-
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) throw new Error("useAuth must be used within an AuthProvider");
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
     return context;
 };
