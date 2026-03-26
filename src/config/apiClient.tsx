@@ -47,9 +47,7 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 await clearTokens();
                 console.error("Session expired. Please log in again.", refreshError);
-                // Instead of just rejecting, you might want to navigate the user to the login screen.
-                // This would require access to the navigation container, which is not available here.
-                // The application should handle API errors and navigate accordingly.
+
                 return Promise.reject(refreshError);
             }
         }

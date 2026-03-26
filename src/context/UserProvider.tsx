@@ -28,7 +28,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         if (user) {
             fetchFitnessProfile();
         } else {
-            // If there's no user, clear the profile and stop loading.
             setFitnessProfile(null);
             setIsLoading(false);
         }
